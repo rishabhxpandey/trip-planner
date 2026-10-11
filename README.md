@@ -4,7 +4,7 @@ Mobile-first group trip planner. Make a trip, drop the link in the group chat; e
 
 Built from the design handoff in [`docs/HANDOFF.md`](docs/HANDOFF.md) (prototype in `docs/design/`).
 
-**Stack:** Next.js 16 (App Router) · TypeScript · Tailwind v4 · Postgres (Neon) · Drizzle ORM · Auth.js v5 (Google) · Vercel.
+**Stack:** Next.js 16 (App Router) · TypeScript · Tailwind v4 · Postgres (Supabase or Neon) · Drizzle ORM · Auth.js v5 (Google) · Vercel.
 
 ## Run locally
 
@@ -16,13 +16,14 @@ npm run db:migrate              # applies drizzle/*.sql
 npm run dev
 ```
 
-`DATABASE_URL` pointing at `*.neon.tech` uses the Neon HTTP driver; any other URL (e.g. a local Postgres) uses `postgres-js`.
+`DATABASE_URL` pointing at `*.neon.tech` uses the Neon HTTP driver; any other URL (Supabase, local Postgres) uses `postgres-js` with prepared statements off, as Supabase's transaction pooler requires.
 
 Google sign-in turns on when `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` are set (redirect URI: `{origin}/api/auth/callback/google`). Without them the app works fully and the Google entry points are hidden.
 
-## Deploy (Vercel + Neon)
+## Deploy (Vercel + Supabase)
 
-1. Create a Neon database, run `npm run db:migrate` against it.
+1. Database: the Supabase project `outward` (us-east-1) already has both migrations applied, including RLS on every table so Supabase's public REST API can't read anything (the app connects as the owner, which bypasses RLS). For a new database, run `npm run db:migrate`.
+   `DATABASE_URL` is the **Transaction pooler** string from Supabase → Connect (port 6543).
 2. Vercel env vars: `DATABASE_URL`, `AUTH_SECRET`, optionally `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `NEXT_PUBLIC_SITE_URL`.
 3. Config knobs: `NEXT_PUBLIC_WEEK_STARTS_MONDAY`, `NEXT_PUBLIC_MIN_RANGE_DAYS`, `NEXT_PUBLIC_PUBLIC_VETOES`.
 
