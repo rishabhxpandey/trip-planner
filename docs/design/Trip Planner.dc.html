@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F4EFE4;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box}
+a{color:#1D2326}
+a:hover{color:#0F5F66}
+input,button{font-family:inherit}
+</style>
+</helmet>
+<div style="min-height:100vh; background:#F4EFE4; color:#1D2326; font-family:'Instrument Sans',system-ui,sans-serif; font-size:15px;">
+<div style="max-width:480px; margin:0 auto; min-height:100vh; position:relative;">
+
+<sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+<div style="padding:20px 20px 48px; display:flex; flex-direction:column; gap:28px;">
+  <div style="display:flex; align-items:center; gap:8px; font:800 20px 'Bricolage Grotesque'; letter-spacing:-0.02em;">
+    <span style="width:22px; height:22px; border-radius:6px; background:#1D2326; display:flex; align-items:center; justify-content:center;"><span style="width:8px; height:8px; border-radius:4px; background:#E06A33;"></span></span>
+    <span>Outward</span>
+  </div>
+  <div style="display:flex; flex-direction:column; gap:12px; padding-top:12px;">
+    <h1 style="font:800 46px/0.98 'Bricolage Grotesque'; letter-spacing:-0.035em; margin:0; text-wrap:balance;">Plan the trip, not the group chat.</h1>
+    <p style="margin:0; font-size:17px; line-height:1.45; color:#5E5D56; text-wrap:pretty;">Make a trip, drop the link in the chat. Everyone taps the days they're free and votes on where to go. No accounts.</p>
+  </div>
+  <div style="background:#FFFCF5; border:1px solid #E3DAC7; border-radius:20px; padding:20px; display:flex; flex-direction:column; gap:18px;">
+    <label style="display:flex; flex-direction:column; gap:8px;">
+      <span style="font-weight:600; font-size:14px;">Trip name</span>
+      <input value="{{ form.name }}" onChange="{{ onFormName }}" placeholder="Ski weekend, Lisbon '27…" style="height:50px; border-radius:12px; border:1px solid #D9CFBA; background:#fff; padding:0 14px; font-size:17px; color:#1D2326; outline:none;" style-focus="border-color:#1D2326"></input>
+    </label>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <span style="font-weight:600; font-size:14px;">When could it happen?</span>
+      <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px;">
+        <label style="display:flex; flex-direction:column; gap:4px;">
+          <span style="font-size:12px; color:#6B6A63; text-transform:uppercase; letter-spacing:0.06em; font-weight:600;">From</span>
+          <input type="date" value="{{ form.start }}" onChange="{{ onFormStart }}" style="height:50px; border-radius:12px; border:1px solid #D9CFBA; background:#fff; padding:0 12px; font-size:16px; color:#1D2326; width:100%;"></input>
+        </label>
+        <label style="display:flex; flex-direction:column; gap:4px;">
+          <span style="font-size:12px; color:#6B6A63; text-transform:uppercase; letter-spacing:0.06em; font-weight:600;">To</span>
+          <input type="date" value="{{ form.end }}" onChange="{{ onFormEnd }}" style="height:50px; border-radius:12px; border:1px solid #D9CFBA; background:#fff; padding:0 12px; font-size:16px; color:#1D2326; width:100%;"></input>
+        </label>
+      </div>
+      <span style="font-size:13px; color:#6B6A63;">The range people pick from. Up to 90 days.</span>
+    </div>
+    <sc-if value="{{ hasFormErr }}" hint-placeholder-val="{{ false }}">
+      <div style="font-size:14px; color:#A3311C; font-weight:600;">{{ formErr }}</div>
+    </sc-if>
+    <button onClick="{{ createTrip }}" style="height:54px; border:none; border-radius:14px; background:#1D2326; color:#FFFCF5; font:700 17px 'Instrument Sans'; cursor:pointer;" style-active="transform:scale(0.98)">Create trip &amp; get link</button>
+  </div>
+  <div style="display:flex; flex-direction:column; gap:10px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+      <span style="font-size:12px; color:#6B6A63; text-transform:uppercase; letter-spacing:0.08em; font-weight:700;">{{ recentLabel }}</span>
+      <sc-if value="{{ signedIn }}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{ signOut }}" style="height:36px; padding:0; border:none; background:none; color:#5E5D56; font-size:13px; cursor:pointer;">{{ accountEmail }} · <span style="text-decoration:underline; text-underline-offset:3px;">sign out</span></button>
+      </sc-if>
+    </div>
+    <sc-for list="{{ recent }}" as="r" hint-placeholder-count="1">
+      <button onClick="{{ r.open }}" style="display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:60px; padding:12px 16px; border-radius:14px; border:1px solid #E3DAC7; background:#FFFCF5; text-align:left; cursor:pointer; color:#1D2326;" style-hover="border-color:#1D2326">
+        <span style="display:flex; flex-direction:column; gap:2px; min-width:0;">
+          <span style="font:700 17px 'Bricolage Grotesque'; letter-spacing:-0.01em;">{{ r.name }}</span>
+          <span style="font-size:13px; color:#6B6A63;">{{ r.sub }}</span>
+        </span>
+        <span style="font-size:20px; color:#6B6A63;">→</span>
+      </button>
+    </sc-for>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isTrip }}" hint-placeholder-val="{{ false }}">
+<div style="padding-bottom:40px;">
+  <div style="padding:14px 20px 0; display:flex; flex-direction:column; gap:14px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+      <button onClick="{{ goHome }}" style="height:44px; padding:0 4px; border:none; background:none; display:flex; align-items:center; gap:8px; font:800 17px 'Bricolage Grotesque'; color:#1D2326; cursor:pointer; letter-spacing:-0.02em;">
+        <span style="width:20px; height:20px; border-radius:6px; background:#1D2326; display:flex; align-items:center; justify-content:center;"><span style="width:7px; height:7px; border-radius:4px; background:#E06A33;"></span></span>
+        <span>Outward</span>
+      </button>
+      <button onClick="{{ share }}" style="height:44px; padding:0 16px; border-radius:22px; border:1px solid #1D2326; background:#1D2326; color:#FFFCF5; font-weight:700; font-size:15px; display:flex; align-items:center; gap:8px; cursor:pointer;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"></path><path d="m7 8 5-5 5 5"></path><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"></path></svg>
+        <span>Share link</span>
+      </button>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:6px;">
+      <h1 style="margin:0; font:800 34px/1.02 'Bricolage Grotesque'; letter-spacing:-0.03em; text-wrap:balance;">{{ trip.name }}</h1>
+      <span style="font-size:15px; color:#5E5D56;">{{ windowLabel }}</span>
+    </div>
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+      <div style="display:flex; align-items:center; padding-left:6px;">
+        <sc-for list="{{ avatars }}" as="a" hint-placeholder-count="4">
+          <span title="{{ a.name }}" style="width:34px; height:34px; margin-left:-6px; border-radius:17px; background:{{ a.bg }}; color:{{ a.fg }}; border:2px solid #F4EFE4; box-shadow:{{ a.ring }}; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px;">{{ a.initial }}</span>
+        </sc-for>
+      </div>
+      <sc-if value="{{ hasMe }}" hint-placeholder-val="{{ true }}">
+        <button onClick="{{ openSheet }}" style="min-height:44px; border:none; background:none; font-size:14px; color:#5E5D56; cursor:pointer; padding:0; text-align:right;">You're <strong style="color:#1D2326; display:inline-flex; align-items:center; gap:4px;">{{ meName }}<sc-if value="{{ meLocked }}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0F5F66" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg></sc-if></strong> · <span style="text-decoration:underline; text-underline-offset:3px;">switch</span></button>
+      </sc-if>
+    </div>
+  </div>
+
+  <div style="position:sticky; top:0; z-index:5; background:#F4EFE4; padding:14px 20px 12px;">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; padding:4px; background:#E8E0CF; border-radius:14px;">
+      <button onClick="{{ tabDates }}" style="height:44px; border:none; border-radius:11px; background:{{ tabDatesBg }}; color:#1D2326; font-weight:700; font-size:15px; cursor:pointer; box-shadow:{{ tabDatesShadow }};">Dates</button>
+      <button onClick="{{ tabWhere }}" style="height:44px; border:none; border-radius:11px; background:{{ tabWhereBg }}; color:#1D2326; font-weight:700; font-size:15px; cursor:pointer; box-shadow:{{ tabWhereShadow }};">Where</button>
+    </div>
+  </div>
+
+  <sc-if value="{{ isDates }}" hint-placeholder-val="{{ true }}">
+  <div style="padding:4px 20px 0; display:flex; flex-direction:column; gap:20px;">
+    <sc-if value="{{ showNudge }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#E4EEEC; border-radius:18px; padding:16px; display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; gap:12px; align-items:flex-start;">
+          <span style="width:36px; height:36px; flex:none; border-radius:18px; background:#0F5F66; display:flex; align-items:center; justify-content:center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFCF5" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg></span>
+          <div style="display:flex; flex-direction:column; gap:3px; min-width:0;">
+            <span style="font:700 17px 'Bricolage Grotesque';">Keep your spot on every device</span>
+            <span style="font-size:14px; color:#3D4A4C; line-height:1.4;">Locks “{{ meName }}” to you, so nobody else can pick it and your laptop knows who you are.</span>
+          </div>
+        </div>
+        <sc-if value="{{ inApp }}" hint-placeholder-val="{{ false }}">
+          <span style="font-size:13px; font-weight:600; color:#7A4A0E; background:#FBE6C9; border-radius:10px; padding:10px 12px; line-height:1.4;">Google doesn't allow sign-in inside this app's browser. Open the link in Safari or Chrome first.</span>
+        </sc-if>
+        <div style="display:flex; gap:8px;">
+          <button onClick="{{ linkGoogle }}" style="height:50px; border-radius:12px; border:1.5px solid #1D2326; background:#fff; color:#1D2326; font-weight:700; font-size:15px; display:flex; align-items:center; justify-content:center; gap:10px; cursor:pointer; flex:1;"><span style="width:22px; height:22px; border-radius:11px; border:1.5px solid #1D2326; display:flex; align-items:center; justify-content:center; font:800 12px 'Instrument Sans';">G</span><span>Continue with Google</span></button>
+          <button onClick="{{ dismissNudge }}" style="height:50px; padding:0 16px; border:none; border-radius:12px; background:none; color:#3D4A4C; font-weight:600; font-size:15px; cursor:pointer;">Not now</button>
+        </div>
+      </div>
+    </sc-if>
+    <div style="background:#FFFCF5; border:1px solid #E3DAC7; border-radius:18px; padding:16px; display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <span style="font:700 19px 'Bricolage Grotesque'; letter-spacing:-0.01em;">{{ rangesTitle }}</span>
+        <span style="font-size:13px; color:#6B6A63; white-space:nowrap;">{{ respondedLabel }}</span>
+      </div>
+      <sc-for list="{{ ranges }}" as="g" hint-placeholder-count="2">
+        <button onClick="{{ g.onTap }}" style="display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:52px; padding:10px 14px; border-radius:12px; border:none; background:{{ g.bg }}; color:{{ g.fg }}; text-align:left; cursor:pointer;">
+          <span style="display:flex; flex-direction:column; gap:1px; min-width:0;">
+            <span style="font-weight:700; font-size:16px;">{{ g.label }}</span>
+            <span style="font-size:13px; opacity:0.9;">{{ g.detail }}</span>
+          </span>
+          <span style="font:700 14px 'Instrument Sans'; white-space:nowrap;">{{ g.len }}</span>
+        </button>
+      </sc-for>
+      <sc-if value="{{ noRanges }}" hint-placeholder-val="{{ false }}">
+        <span style="font-size:14px; color:#5E5D56; line-height:1.4;">{{ noRangesText }}</span>
+      </sc-if>
+      <sc-if value="{{ hasPending }}" hint-placeholder-val="{{ false }}">
+        <span style="font-size:13px; color:#6B6A63; line-height:1.4; border-top:1px dashed #E3DAC7; padding-top:10px;">{{ pendingText }}</span>
+      </sc-if>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+        <button onClick="{{ modeMine }}" style="height:44px; border-radius:22px; border:1.5px solid #1D2326; background:{{ mineBg }}; color:{{ mineFg }}; font-weight:700; font-size:14px; cursor:pointer;">My days</button>
+        <button onClick="{{ modeGroup }}" style="height:44px; border-radius:22px; border:1.5px solid #1D2326; background:{{ groupBg }}; color:{{ groupFg }}; font-weight:700; font-size:14px; cursor:pointer;">Group heatmap</button>
+      </div>
+      <sc-if value="{{ isMine }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
+          <span style="font-size:14px; color:#5E5D56;">{{ mineHelp }}</span>
+          <div style="display:flex; gap:6px;">
+            <button onClick="{{ fillWeekends }}" style="height:36px; padding:0 12px; border-radius:18px; border:1px solid #D9CFBA; background:#FFFCF5; font-size:13px; font-weight:600; color:#1D2326; cursor:pointer;">+ Weekends</button>
+            <button onClick="{{ clearMine }}" style="height:36px; padding:0 12px; border-radius:18px; border:1px solid #D9CFBA; background:#FFFCF5; font-size:13px; font-weight:600; color:#1D2326; cursor:pointer;">Clear</button>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isGroup }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap; font-size:13px; color:#5E5D56;">
+          <span style="display:flex; align-items:center; gap:6px;">
+            <span>Fewer</span>
+            <span style="display:flex; gap:2px;">
+              <span style="width:16px; height:16px; border-radius:4px; background:oklch(0.9 0.04 190);"></span>
+              <span style="width:16px; height:16px; border-radius:4px; background:oklch(0.78 0.07 190);"></span>
+              <span style="width:16px; height:16px; border-radius:4px; background:oklch(0.62 0.09 190);"></span>
+              <span style="width:16px; height:16px; border-radius:4px; background:oklch(0.48 0.1 190);"></span>
+            </span>
+            <span>More free</span>
+          </span>
+          <span style="display:flex; align-items:center; gap:6px;"><span style="width:16px; height:16px; border-radius:4px; background:#C2491C;"></span>Everyone</span>
+          <span style="display:flex; align-items:center; gap:6px;"><span style="width:5px; height:5px; border-radius:3px; background:#1D2326;"></span>You</span>
+        </div>
+      </sc-if>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:22px;">
+      <sc-for list="{{ months }}" as="m" hint-placeholder-count="2">
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <span style="font:700 18px 'Bricolage Grotesque'; letter-spacing:-0.01em;">{{ m.label }}</span>
+          <div style="display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:5px;">
+            <sc-for list="{{ weekdays }}" as="w" hint-placeholder-count="7">
+              <span style="text-align:center; font-size:11px; font-weight:700; color:#6B6A63; letter-spacing:0.06em; padding-bottom:2px;">{{ w }}</span>
+            </sc-for>
+            <sc-for list="{{ m.cells }}" as="c" hint-placeholder-count="30">
+              <button onClick="{{ c.onTap }}" disabled="{{ c.disabled }}" style="aspect-ratio:1; min-height:44px; border-radius:11px; border:1px solid {{ c.border }}; background:{{ c.bg }}; color:{{ c.fg }}; box-shadow:{{ c.ring }}; opacity:{{ c.opacity }}; visibility:{{ c.vis }}; font-weight:600; font-size:15px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:0; cursor:pointer; transition:background .15s, color .15s;">
+                <span>{{ c.label }}</span>
+                <span style="width:5px; height:5px; border-radius:3px; background:currentColor; opacity:{{ c.dot }};"></span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <sc-if value="{{ hasSel }}" hint-placeholder-val="{{ false }}">
+      <div style="position:sticky; bottom:12px; z-index:4; background:#1D2326; color:#FFFCF5; border-radius:18px; padding:14px 16px; display:flex; flex-direction:column; gap:10px; box-shadow:0 10px 30px rgba(29,35,38,0.25);">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+          <span style="font:700 18px 'Bricolage Grotesque';">{{ sel.label }}</span>
+          <button onClick="{{ closeSel }}" style="width:44px; height:44px; margin:-10px -10px -10px 0; border:none; background:none; color:#FFFCF5; font-size:22px; cursor:pointer;">×</button>
+        </div>
+        <span style="font-size:14px;"><strong>{{ sel.countLabel }}</strong></span>
+        <div style="display:flex; flex-wrap:wrap; gap:6px;">
+          <sc-for list="{{ sel.people }}" as="p" hint-placeholder-count="3">
+            <span style="height:28px; padding:0 10px; border-radius:14px; background:{{ p.bg }}; color:{{ p.fg }}; font-size:13px; font-weight:600; display:flex; align-items:center; text-decoration:{{ p.strike }};">{{ p.name }}</span>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isWhere }}" hint-placeholder-val="{{ false }}">
+  <div style="padding:4px 20px 0; display:flex; flex-direction:column; gap:16px;">
+    <div style="background:#FFFCF5; border:1px solid #E3DAC7; border-radius:18px; padding:14px; display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; gap:8px;">
+        <input value="{{ dName }}" onChange="{{ onDName }}" onKeyDown="{{ onDKey }}" placeholder="Add a place…" style="flex:1; min-width:0; height:48px; border-radius:12px; border:1px solid #D9CFBA; background:#fff; padding:0 14px; font-size:16px; color:#1D2326; outline:none;" style-focus="border-color:#1D2326"></input>
+        <button onClick="{{ addDest }}" style="height:48px; padding:0 18px; border:none; border-radius:12px; background:#1D2326; color:#FFFCF5; font-weight:700; font-size:15px; cursor:pointer;">Add</button>
+      </div>
+      <input value="{{ dNote }}" onChange="{{ onDNote }}" onKeyDown="{{ onDKey }}" placeholder="Why? (optional)" style="height:42px; border-radius:10px; border:1px solid #E3DAC7; background:#fff; padding:0 14px; font-size:15px; color:#1D2326; outline:none;"></input>
+    </div>
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:13px; color:#5E5D56;">
+      <span>Thumbs up any you'd go to. Ranked by thumbs.</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:12px; background:#EDE5D4; font-size:14px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A3311C" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="m5.7 5.7 12.6 12.6"></path></svg>
+      <span>{{ vetoStatus }}</span>
+    </div>
+    <sc-if value="{{ noDests }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:28px 16px; text-align:center; color:#5E5D56; border:1.5px dashed #D9CFBA; border-radius:18px; font-size:15px;">No ideas yet. Add the first place.</div>
+    </sc-if>
+    <sc-for list="{{ dests }}" as="d" hint-placeholder-count="3">
+      <div style="background:#FFFCF5; border:1px solid {{ d.border }}; border-radius:18px; padding:16px; display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; gap:12px; align-items:flex-start;">
+          <span style="font:800 15px 'Bricolage Grotesque'; color:#6B6A63; width:20px; padding-top:4px;">{{ d.rank }}</span>
+          <div onClick="{{ d.open }}" style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; cursor:pointer;">
+            <span style="font:700 21px/1.15 'Bricolage Grotesque'; letter-spacing:-0.015em;">{{ d.name }}</span>
+            <sc-if value="{{ d.hasCost }}" hint-placeholder-val="{{ false }}">
+              <span style="font-size:14px; font-weight:700; color:#0F5F66;">{{ d.costLabel }}</span>
+            </sc-if>
+            <sc-if value="{{ d.hasNote }}" hint-placeholder-val="{{ true }}">
+              <span style="font-size:14px; color:#5E5D56; line-height:1.35;">{{ d.note }}</span>
+            </sc-if>
+            <span style="font-size:12px; color:#6B6A63;">{{ d.by }}</span>
+            <sc-if value="{{ d.vetoed }}" hint-placeholder-val="{{ false }}">
+              <span style="align-self:flex-start; margin-top:4px; height:26px; padding:0 10px; border-radius:13px; background:#F6DCD3; color:#8E2A17; font-size:12px; font-weight:700; display:flex; align-items:center; gap:6px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="m5.7 5.7 12.6 12.6"></path></svg>
+                {{ d.vetoLabel }}
+              </span>
+            </sc-if>
+          </div>
+          <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0;">
+            <span style="font:800 30px/1 'Bricolage Grotesque'; letter-spacing:-0.02em;">{{ d.count }}</span>
+            <span style="font-size:11px; color:#6B6A63; font-weight:600; text-transform:uppercase; letter-spacing:0.06em;">{{ d.countUnit }}</span>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; padding-left:32px; flex-wrap:wrap;">
+          <sc-for list="{{ d.approvers }}" as="a" hint-placeholder-count="3">
+            <span style="height:26px; padding:0 9px; border-radius:13px; background:{{ a.bg }}; color:{{ a.fg }}; font-size:12px; font-weight:600; display:flex; align-items:center;">{{ a.name }}</span>
+          </sc-for>
+        </div>
+        <button onClick="{{ d.open }}" style="margin-left:32px; min-height:44px; padding:8px 14px; border-radius:12px; border:1.5px {{ d.pitchBorderStyle }} {{ d.pitchBorder }}; background:{{ d.pitchBg }}; color:#1D2326; display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer; text-align:left;" style-hover="border-color:#1D2326">
+          <span style="display:flex; flex-direction:column; gap:1px; min-width:0;">
+            <span style="font-weight:700; font-size:14px;">{{ d.pitchLabel }}</span>
+            <span style="font-size:12px; color:#5E5D56;">{{ d.pitchSub }}</span>
+          </span>
+          <span style="font-size:18px; color:#5E5D56;">→</span>
+        </button>
+        <div style="display:flex; align-items:center; gap:8px; padding-left:32px;">
+          <button onClick="{{ d.onUp }}" style="height:44px; padding:0 16px; border-radius:22px; border:1.5px solid {{ d.upBorder }}; background:{{ d.upBg }}; color:{{ d.upFg }}; font-weight:700; font-size:14px; display:flex; align-items:center; gap:7px; cursor:pointer;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v12"></path><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"></path></svg>
+            <span>{{ d.upText }}</span>
+          </button>
+          <button onClick="{{ d.onVeto }}" style="height:44px; padding:0 14px; border-radius:22px; border:1.5px solid {{ d.vetoBorder }}; background:{{ d.vetoBg }}; color:{{ d.vetoFg }}; font-weight:700; font-size:14px; display:flex; align-items:center; gap:6px; cursor:pointer;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="m5.7 5.7 12.6 12.6"></path></svg>
+            <span>{{ d.vetoText }}</span>
+          </button>
+          <button onClick="{{ d.onRemove }}" style="margin-left:auto; height:44px; padding:0 4px; border:none; background:none; color:#6B6A63; font-size:13px; font-weight:600; cursor:pointer; text-decoration:underline; text-underline-offset:3px;">Remove</button>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isPitch }}" hint-placeholder-val="{{ false }}">
+<div style="padding-bottom:110px;">
+  <div style="position:sticky; top:0; z-index:6; background:#F4EFE4; padding:8px 12px; display:flex; align-items:center; justify-content:space-between; gap:8px; border-bottom:1px solid #E3DAC7;">
+    <button onClick="{{ closePitch }}" style="height:44px; padding:0 10px; border:none; background:none; color:#1D2326; font-weight:700; font-size:15px; display:flex; align-items:center; gap:6px; cursor:pointer;">← All places</button>
+    <span style="font-size:13px; color:#6B6A63; padding-right:10px;">{{ trip.name }}</span>
+  </div>
+  <div style="padding:18px 20px 6px; display:flex; flex-direction:column; gap:14px;">
+    <div style="display:flex; flex-direction:column; gap:6px;">
+      <span style="font-size:13px; color:#6B6A63; font-weight:600; text-transform:uppercase; letter-spacing:0.07em;">{{ pitch.byLabel }}</span>
+      <h1 style="margin:0; font:800 38px/1 'Bricolage Grotesque'; letter-spacing:-0.035em; text-wrap:balance;">{{ pitch.name }}</h1>
+      <sc-if value="{{ pitch.hasLoc }}" hint-placeholder-val="{{ true }}">
+        <a href="{{ pitch.mapUrl }}" target="_blank" style="align-self:flex-start; min-height:32px; display:flex; align-items:center; gap:6px; font-size:15px; color:#0F5F66; font-weight:600; text-decoration:none;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+          <span>{{ pitch.loc }}</span>
+        </a>
+      </sc-if>
+    </div>
+    <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px;">
+      <div style="background:#FFFCF5; border:1px solid #E3DAC7; border-radius:14px; padding:12px 14px; display:flex; flex-direction:column; gap:2px;">
+        <span style="font:800 26px/1.05 'Bricolage Grotesque'; letter-spacing:-0.02em;">{{ pitch.costBig }}</span>
+        <span style="font-size:12px; color:#6B6A63; font-weight:600;">per person, est.</span>
+      </div>
+      <div style="background:#FFFCF5; border:1px solid #E3DAC7; border-radius:14px; padding:12px 14px; display:flex; flex-direction:column; gap:2px;">
+        <span style="font:800 26px/1.05 'Bricolage Grotesque'; letter-spacing:-0.02em;">{{ pitch.count }}</span>
+        <span style="font-size:12px; color:#6B6A63; font-weight:600;">{{ pitch.countSub }}</span>
+      </div>
+    </div>
+    <sc-if value="{{ pitch.vetoed }}" hint-placeholder-val="{{ false }}">
+      <span style="align-self:flex-start; height:28px; padding:0 12px; border-radius:14px; background:#F6DCD3; color:#8E2A17; font-size:13px; font-weight:700; display:flex; align-items:center;">{{ pitch.vetoLabel }}</span>
+    </sc-if>
+    <span style="font-size:13px; color:#5E5D56;">{{ pitch.editHint }}</span>
+  </div>
+
+  <div style="padding:10px 20px 0; display:flex; flex-direction:column; gap:12px;">
+    <div style="background:#FFFCF5; border:1.5px solid {{ cv.border }}; border-radius:20px; padding:18px; display:flex; flex-direction:column; gap:14px;">
+      <sc-if value="{{ cv.viewing }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <sc-if value="{{ cv.empty }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; flex-direction:column; gap:14px;">
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <span style="font:700 22px/1.15 'Bricolage Grotesque'; letter-spacing:-0.015em; text-wrap:balance;">Make the case for {{ pitch.name }}</span>
+                <span style="font-size:15px; color:#5E5D56; line-height:1.4;">One page, anything goes. Tap an idea to start, or send your AI below.</span>
+              </div>
+              <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                <sc-for list="{{ cv.ideas }}" as="i" hint-placeholder-count="6">
+                  <button onClick="{{ i.start }}" style="height:40px; padding:0 14px; border-radius:20px; border:1.5px dashed #B9AE96; background:none; color:#1D2326; font-size:14px; font-weight:600; cursor:pointer;" style-hover="border-color:#1D2326">{{ i.label }}</button>
+                </sc-for>
+              </div>
+              <button onClick="{{ cv.onEdit }}" style="height:50px; border:none; border-radius:14px; background:#1D2326; color:#FFFCF5; font-weight:700; font-size:16px; cursor:pointer;">Start writing</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{ cv.filled }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex; flex-direction:column; gap:14px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                <span style="font-size:12px; font-weight:700; color:#6B6A63; text-transform:uppercase; letter-spacing:0.08em;">{{ cv.byline }}</span>
+                <button onClick="{{ cv.onEdit }}" style="height:36px; margin:-6px -6px -6px 0; padding:0 14px; border:none; border-radius:18px; background:#EDE5D4; color:#1D2326; font-size:13px; font-weight:700; cursor:pointer;">Edit</button>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <sc-for list="{{ cv.blocks }}" as="b" hint-placeholder-count="6">
+                  <div style="display:flex; flex-direction:column; gap:6px; padding-top:{{ b.pt }};">
+                    <sc-if value="{{ b.isH }}" hint-placeholder-val="{{ false }}">
+                      <span style="font:700 19px/1.2 'Bricolage Grotesque'; letter-spacing:-0.01em;">{{ b.text }}</span>
+                    </sc-if>
+                    <sc-if value="{{ b.isLine }}" hint-placeholder-val="{{ true }}">
+                      <div style="display:flex; gap:10px; align-items:baseline;">
+                        <sc-if value="{{ b.hasLead }}" hint-placeholder-val="{{ false }}">
+                          <span style="flex:none; min-width:{{ b.leadW }}; font-size:12px; font-weight:700; color:#0F5F66; text-transform:uppercase; letter-spacing:0.06em;">{{ b.lead }}</span>
+                        </sc-if>
+                        <span style="font-size:16px; line-height:1.5; text-wrap:pretty; font-weight:{{ b.weight }};">{{ b.text }}</span>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ b.hasLinks }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:flex; flex-wrap:wrap; gap:6px; padding-left:{{ b.linkPad }};">
+                        <sc-for list="{{ b.links }}" as="l" hint-placeholder-count="1">
+                          <a href="{{ l.url }}" target="_blank" style="height:34px; padding:0 12px; border-radius:17px; background:#1D2326; color:#FFFCF5; font-size:13px; font-weight:700; display:flex; align-items:center; gap:6px; text-decoration:none;">{{ l.host }} ↗</a>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="display:flex; gap:6px; flex-wrap:wrap; border-top:1px solid #E3DAC7; padding-top:12px;">
+                <sc-for list="{{ cv.reacts }}" as="r" hint-placeholder-count="4">
+                  <button onClick="{{ r.toggle }}" title="{{ r.who }}" style="height:36px; min-width:48px; padding:0 12px; border-radius:18px; border:1.5px solid {{ r.border }}; background:{{ r.bg }}; color:#1D2326; font-size:15px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; opacity:{{ r.opacity }};">
+                    <span>{{ r.e }}</span>
+                    <span>{{ r.n }}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+      <sc-if value="{{ cv.editing }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <textarea value="{{ draftText }}" onChange="{{ onDraftText }}" placeholder="Why we should go, where we'd stay, how we'd get there, a rough plan, what it costs…" style="width:100%; min-height:360px; border-radius:14px; border:1px solid #D9CFBA; background:#fff; padding:14px; font:16px/1.55 'Instrument Sans'; color:#1D2326; resize:vertical; outline:none;"></textarea>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <span style="font-size:12px; font-weight:700; color:#6B6A63; text-transform:uppercase; letter-spacing:0.08em;">Add an idea</span>
+            <div style="display:flex; flex-wrap:wrap; gap:6px;">
+              <sc-for list="{{ cv.ideas }}" as="i" hint-placeholder-count="6">
+                <button onClick="{{ i.insert }}" style="height:36px; padding:0 12px; border-radius:18px; border:1px solid #D9CFBA; background:#F4EFE4; color:#1D2326; font-size:13px; font-weight:600; cursor:pointer;">+ {{ i.label }}</button>
+              </sc-for>
+            </div>
+            <span style="font-size:12px; color:#6B6A63; line-height:1.4;">Links turn into buttons. Write “Cost per person: ~$400” and it shows on the vote card.</span>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button onClick="{{ saveEdit }}" style="flex:1; height:48px; border:none; border-radius:12px; background:#1D2326; color:#FFFCF5; font-weight:700; font-size:15px; cursor:pointer;">Save</button>
+            <button onClick="{{ cancelEdit }}" style="height:48px; padding:0 18px; border:1px solid #D9CFBA; border-radius:12px; background:#FFFCF5; color:#1D2326; font-weight:600; font-size:15px; cursor:pointer;">Cancel</button>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+
+    <div style="background:#1D2326; color:#FFFCF5; border-radius:18px; overflow:hidden;">
+      <button onClick="{{ toggleAi }}" style="width:100%; min-height:64px; padding:12px 16px; border:none; background:none; color:#FFFCF5; display:flex; align-items:center; gap:12px; text-align:left; cursor:pointer;">
+        <span style="width:36px; height:36px; flex:none; border-radius:10px; background:#E06A33; color:#1D2326; display:flex; align-items:center; justify-content:center;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"></path><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"></path></svg>
+        </span>
+        <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+          <span style="font:700 17px 'Bricolage Grotesque';">Send your AI</span>
+          <span style="font-size:13px; color:#C9C4B6;">Your own Claude, ChatGPT or agent plans it and posts here</span>
+        </span>
+        <span style="font-size:18px; color:#C9C4B6;">{{ aiChevron }}</span>
+      </button>
+      <sc-if value="{{ aiOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:0 16px 16px; display:flex; flex-direction:column; gap:16px;">
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <span style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:#C9C4B6;">Open your AI with the plan request ready</span>
+            <span style="font-size:14px; color:#E8E3D6; line-height:1.45;">{{ aiStepText }}</span>
+            <div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px;">
+              <sc-for list="{{ aiApps }}" as="ap" hint-placeholder-count="3">
+                <button onClick="{{ ap.open }}" style="min-height:64px; padding:8px 6px; border-radius:14px; border:1.5px solid {{ ap.border }}; background:{{ ap.bg }}; color:{{ ap.fg }}; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer;">
+                  <span style="font-weight:700; font-size:15px;">{{ ap.name }}</span>
+                  <span style="font-size:11px; opacity:0.85;">{{ ap.sub }}</span>
+                </button>
+              </sc-for>
+            </div>
+            <button onClick="{{ copyPrompt }}" style="align-self:flex-start; height:36px; padding:0; border:none; background:none; color:#C9C4B6; font-size:13px; font-weight:600; text-decoration:underline; text-underline-offset:3px; cursor:pointer;">Using something else? Copy the instructions</button>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <span style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:#C9C4B6;">Your personal AI link</span>
+            <div style="display:flex; align-items:center; gap:8px; padding:6px 6px 6px 12px; border-radius:12px; background:#272E31; border:1px solid #3A4247;">
+              <span style="flex:1; min-width:0; font:12px/1.4 ui-monospace,Menlo,monospace; color:#E8E3D6; word-break:break-all;">{{ agentUrl }}</span>
+              <button onClick="{{ copyAgentUrl }}" style="height:36px; padding:0 12px; flex:none; border-radius:18px; border:1px solid #3A4247; background:none; color:#FFFCF5; font-size:12px; font-weight:700; cursor:pointer;">Copy</button>
+            </div>
+            <span style="font-size:12px; color:#C9C4B6; line-height:1.4;">{{ agentNote }}</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:8px; border-top:1px solid #3A4247; padding-top:14px;">
+            <span style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:#C9C4B6;">Your AI can't post to links?</span>
+            <span style="font-size:13px; color:#C9C4B6;">Paste its reply here instead.</span>
+            <textarea value="{{ aiPaste }}" onChange="{{ onAiPaste }}" rows="3" placeholder="Paste its JSON reply" style="width:100%; border-radius:12px; border:1px solid #3A4247; background:#272E31; padding:12px 14px; font:13px/1.4 ui-monospace,Menlo,monospace; color:#FFFCF5; resize:vertical; outline:none;"></textarea>
+            <button onClick="{{ importPaste }}" style="align-self:flex-start; height:40px; padding:0 14px; border-radius:20px; border:none; background:#FFFCF5; color:#1D2326; font-size:14px; font-weight:700; cursor:pointer;">Import reply</button>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:8px; border-top:1px solid #3A4247; padding-top:14px;">
+            <button onClick="{{ toggleApi }}" style="height:36px; padding:0; border:none; background:none; color:#C9C4B6; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; text-align:left; cursor:pointer;">{{ apiToggleLabel }}</button>
+            <sc-if value="{{ apiOpen }}" hint-placeholder-val="{{ false }}">
+              <pre style="margin:0; padding:12px; border-radius:12px; background:#272E31; color:#E8E3D6; font:12px/1.5 ui-monospace,Menlo,monospace; white-space:pre-wrap; word-break:break-all;">{{ apiText }}</pre>
+            </sc-if>
+          </div>
+          <span style="font-size:12px; color:#C9C4B6;">A posted plan replaces what's here. Anyone can undo it or edit afterwards.</span>
+        </div>
+      </sc-if>
+    </div>
+    <div style="background:#FFFCF5; border:1px solid #E3DAC7; border-radius:18px; padding:16px; display:flex; flex-direction:column; gap:14px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <span style="font:700 18px 'Bricolage Grotesque';">Comments &amp; questions</span>
+        <span style="font-size:13px; color:#6B6A63;">{{ pitch.openQLabel }}</span>
+      </div>
+      <sc-if value="{{ pitch.noComments }}" hint-placeholder-val="{{ false }}">
+        <span style="font-size:14px; color:#6B6A63;">Nothing yet. Ask the pitcher anything.</span>
+      </sc-if>
+      <sc-for list="{{ pitch.comments }}" as="c" hint-placeholder-count="2">
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+          <span style="width:32px; height:32px; flex:none; border-radius:16px; background:{{ c.bg }}; color:{{ c.fg }}; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px;">{{ c.initial }}</span>
+          <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <span style="font-weight:700; font-size:14px;">{{ c.name }}</span>
+              <sc-if value="{{ c.isQ }}" hint-placeholder-val="{{ false }}">
+                <span style="height:22px; padding:0 8px; border-radius:11px; background:{{ c.tagBg }}; color:{{ c.tagFg }}; font-size:11px; font-weight:700; display:flex; align-items:center; text-transform:uppercase; letter-spacing:0.05em;">{{ c.tag }}</span>
+              </sc-if>
+            </div>
+            <span style="font-size:15px; line-height:1.4; text-wrap:pretty;">{{ c.text }}</span>
+            <sc-if value="{{ c.canAnswer }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ c.markDone }}" style="align-self:flex-start; height:32px; padding:0 12px; border-radius:16px; border:1px solid #D9CFBA; background:#fff; color:#1D2326; font-size:13px; font-weight:600; cursor:pointer;">Mark answered</button>
+            </sc-if>
+          </div>
+        </div>
+      </sc-for>
+      <div style="display:flex; flex-direction:column; gap:8px; border-top:1px solid #E3DAC7; padding-top:12px;">
+        <div style="display:flex; gap:8px;">
+          <input value="{{ cText }}" onChange="{{ onCText }}" onKeyDown="{{ onCKey }}" placeholder="{{ cPlaceholder }}" style="flex:1; min-width:0; height:46px; border-radius:12px; border:1px solid #D9CFBA; background:#fff; padding:0 14px; font-size:16px; color:#1D2326; outline:none;"></input>
+          <button onClick="{{ sendComment }}" style="height:46px; padding:0 16px; border:none; border-radius:12px; background:#1D2326; color:#FFFCF5; font-weight:700; font-size:15px; cursor:pointer;">Send</button>
+        </div>
+        <button onClick="{{ toggleQ }}" style="align-self:flex-start; height:36px; padding:0 12px; border-radius:18px; border:1.5px solid {{ qBorder }}; background:{{ qBg }}; color:{{ qFg }}; font-size:13px; font-weight:700; display:flex; align-items:center; gap:6px; cursor:pointer;">{{ qLabel }}</button>
+      </div>
+    </div>
+  </div>
+
+  <div style="position:fixed; left:50%; bottom:0; transform:translateX(-50%); z-index:7; width:100%; max-width:480px; padding:12px 20px 20px; background:linear-gradient(rgba(244,239,228,0), #F4EFE4 30%); display:flex; gap:8px;">
+    <button onClick="{{ pitch.onUp }}" style="flex:1; height:52px; border-radius:26px; border:1.5px solid #1D2326; background:{{ pitch.upBg }}; color:{{ pitch.upFg }}; font-weight:700; font-size:16px; cursor:pointer; box-shadow:0 6px 20px rgba(29,35,38,0.15);">{{ pitch.upText }}</button>
+    <button onClick="{{ pitch.onVeto }}" style="height:52px; padding:0 20px; border-radius:26px; border:1.5px solid {{ pitch.vetoBorder }}; background:{{ pitch.vetoBg }}; color:{{ pitch.vetoFg }}; font-weight:700; font-size:16px; cursor:pointer;">{{ pitch.vetoText }}</button>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed; inset:0; z-index:20; background:rgba(29,35,38,0.45); display:flex; align-items:flex-end; justify-content:center;">
+    <div style="width:100%; max-width:480px; max-height:88vh; overflow:auto; background:#FFFCF5; border-radius:24px 24px 0 0; padding:10px 20px 28px; display:flex; flex-direction:column; gap:18px;">
+      <span style="align-self:center; width:40px; height:5px; border-radius:3px; background:#D9CFBA;"></span>
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <span style="font-size:13px; color:#6B6A63; font-weight:600;">{{ trip.name }}</span>
+        <h2 style="margin:0; font:800 28px/1.05 'Bricolage Grotesque'; letter-spacing:-0.025em;">Who's this?</h2>
+        <span style="font-size:15px; color:#5E5D56; line-height:1.4;">Pick your name so the group knows whose days are whose. We'll remember you on this phone.</span>
+      </div>
+      <sc-if value="{{ hasPeople }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <sc-for list="{{ sheetPeople }}" as="p" hint-placeholder-count="3">
+            <button onClick="{{ p.pick }}" style="display:flex; align-items:center; gap:12px; min-height:54px; padding:8px 12px; border-radius:14px; border:1.5px solid {{ p.border }}; background:#fff; cursor:pointer; text-align:left; color:#1D2326;" style-hover="border-color:#1D2326">
+              <span style="width:36px; height:36px; border-radius:18px; background:{{ p.bg }}; color:{{ p.fg }}; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;">{{ p.initial }}</span>
+              <span style="font-weight:600; font-size:16px; flex:1; display:flex; align-items:center; gap:6px;">{{ p.name }}<sc-if value="{{ p.locked }}" hint-placeholder-val="{{ false }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0F5F66" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg></sc-if></span>
+              <span style="font-size:13px; color:#6B6A63;">{{ p.sub }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <span style="font-size:14px; font-weight:600;">{{ newLabel }}</span>
+        <div style="display:flex; gap:8px;">
+          <input value="{{ newName }}" onChange="{{ onNewName }}" onKeyDown="{{ onNewKey }}" placeholder="Your name" style="flex:1; min-width:0; height:50px; border-radius:12px; border:1px solid #D9CFBA; background:#fff; padding:0 14px; font-size:17px; color:#1D2326; outline:none;" style-focus="border-color:#1D2326"></input>
+          <button onClick="{{ joinNew }}" style="height:50px; padding:0 20px; border:none; border-radius:12px; background:#1D2326; color:#FFFCF5; font-weight:700; font-size:16px; cursor:pointer;">Join</button>
+        </div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px; border-top:1px solid #E3DAC7; padding-top:16px;">
+        <span style="font-size:14px; color:#5E5D56;">{{ sheetGoogleText }}</span>
+        <button onClick="{{ sheetGoogle }}" style="height:50px; border-radius:12px; border:1.5px solid #1D2326; background:#fff; color:#1D2326; font-weight:700; font-size:15px; display:flex; align-items:center; justify-content:center; gap:10px; cursor:pointer;"><span style="width:22px; height:22px; border-radius:11px; border:1.5px solid #1D2326; display:flex; align-items:center; justify-content:center; font:800 12px 'Instrument Sans';">G</span><span>{{ sheetGoogleLabel }}</span></button>
+      </div>
+      <sc-if value="{{ canCloseSheet }}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{ closeSheet }}" style="height:44px; border:none; background:none; color:#5E5D56; font-weight:600; font-size:15px; cursor:pointer;">Cancel</button>
+      </sc-if>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ gOpen }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed; inset:0; z-index:25; background:rgba(29,35,38,0.55); display:flex; align-items:center; justify-content:center; padding:20px;">
+    <div style="width:100%; max-width:380px; background:#fff; border-radius:20px; padding:22px; display:flex; flex-direction:column; gap:14px;">
+      <span style="align-self:flex-start; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#7A4A0E; background:#FBE6C9; border-radius:8px; padding:4px 8px;">Prototype stand-in for Google</span>
+      <span style="font:700 22px/1.15 'Bricolage Grotesque';">{{ gTitle }}</span>
+      <span style="font-size:14px; color:#5E5D56; line-height:1.4;">{{ gSub }}</span>
+      <input value="{{ gEmail }}" onChange="{{ onGEmail }}" onKeyDown="{{ onGKey }}" type="email" placeholder="you@gmail.com" style="height:50px; border-radius:12px; border:1px solid #D9CFBA; background:#fff; padding:0 14px; font-size:16px; color:#1D2326; outline:none;"></input>
+      <sc-if value="{{ hasGErr }}" hint-placeholder-val="{{ false }}">
+        <span style="font-size:13px; font-weight:600; color:#A3311C;">{{ gErr }}</span>
+      </sc-if>
+      <div style="display:flex; gap:8px;">
+        <button onClick="{{ finishGoogle }}" style="flex:1; height:48px; border:none; border-radius:12px; background:#1D2326; color:#FFFCF5; font-weight:700; font-size:15px; cursor:pointer;">Continue</button>
+        <button onClick="{{ closeGoogle }}" style="height:48px; padding:0 16px; border:1px solid #D9CFBA; border-radius:12px; background:#fff; color:#1D2326; font-weight:600; font-size:15px; cursor:pointer;">Cancel</button>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed; left:50%; bottom:24px; transform:translateX(-50%); z-index:30; width:calc(100% - 40px); max-width:440px; background:#1D2326; color:#FFFCF5; border-radius:14px; padding:6px 6px 6px 16px; min-height:52px; display:flex; align-items:center; justify-content:space-between; gap:12px; box-shadow:0 10px 30px rgba(29,35,38,0.3); font-size:15px;">
+    <span>{{ toast.msg }}</span>
+    <sc-if value="{{ toastHasUndo }}" hint-placeholder-val="{{ false }}">
+      <button onClick="{{ toastUndo }}" style="height:40px; padding:0 14px; border:none; border-radius:10px; background:#E06A33; color:#1D2326; font-weight:700; font-size:14px; cursor:pointer;">{{ toast.label }}</button>
+    </sc-if>
+  </div>
+</sc-if>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;weekStartsMonday&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Dates&quot;},&quot;rangeMinDays&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:2,&quot;min&quot;:1,&quot;max&quot;:7,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Dates&quot;},&quot;publicVetoes&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Voting&quot;}}">
+const DAY = 864e5;
+const KEY = 'outward:v4';
+const P = s => { const [y, m, d] = s.split('-').map(Number); return Date.UTC(y, m - 1, d); };
+const F = t => new Date(t).toISOString().slice(0, 10);
+const fmt = (t, o) => new Date(t).toLocaleDateString('en-US', Object.assign({ timeZone: 'UTC' }, o));
+const SHORT = t => fmt(t, { weekday: 'short', month: 'short', day: 'numeric' });
+const MD = t => fmt(t, { month: 'short', day: 'numeric' });
+const HUES = [35, 165, 255, 330, 95, 210, 10, 290];
+const uid = () => Math.random().toString(36).slice(2, 10);
+const clone = o => JSON.parse(JSON.stringify(o));
+const dayList = (s, e) => { const out = []; for (let t = P(s); t <= P(e); t += DAY) out.push(F(t)); return out; };
+const wd = d => new Date(P(d)).getUTCDay();
+const IDEAS = [
+  { label: 'The vibe', ins: 'Why we should go: ' },
+  { label: 'Where', ins: 'Where: ' },
+  { label: 'Where we’d stay', ins: 'Stay: ' },
+  { label: 'Getting there', ins: 'Getting there: ' },
+  { label: 'Day by day', ins: 'Day 1: \nDay 2: \nDay 3: ' },
+  { label: 'Must-dos', ins: '- ' },
+  { label: 'Cost per person', ins: 'Cost per person: ~$' }
+];
+const AI_APPS = [
+  { k: 'claude', name: 'Claude', sub: 'claude.ai', verified: true, url: q => 'https://claude.ai/new?q=' + encodeURIComponent(q) },
+  { k: 'chatgpt', name: 'ChatGPT', sub: 'chatgpt.com', verified: true, url: q => 'https://chatgpt.com/?q=' + encodeURIComponent(q) },
+  { k: 'muse', name: 'Muse', sub: 'by Meta', verified: false, url: q => 'https://muse.ai/?q=' + encodeURIComponent(q) }
+];
+const EMO = ['👍', '😍', '🤔', '💸'];
+const blank = () => ({ text: '' });
+const pz = d => ({ text: (d.pitch && typeof d.pitch.text === 'string') ? d.pitch.text : '' });
+const ptotal = p => { const m = p.text.match(/cost[^\n$]*\$\s?([\d,]+)/i) || p.text.match(/\$\s?([\d,]+)\s*(?:\/|per\s)\s*(?:person|pp|head)/i); return m ? parseFloat(m[1].replace(/,/g, '')) : 0; };
+const money = n => '$' + Math.round(n).toLocaleString('en-US');
+const locOf = p => { const m = p.text.match(/^\s*where:\s*(.+)$/im); return m ? m[1].replace(/https?:\/\/\S+/g, '').trim() : ''; };
+const host = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; } };
+const URL_RE = /https?:\/\/[^\s)]+/g;
+function blocksOf(text) {
+  const out = []; let gap = false;
+  text.split('\n').forEach(raw => {
+    const line = raw.trim();
+    if (!line) { gap = out.length > 0; return; }
+    const links = (line.match(URL_RE) || []).map(u => ({ url: u, host: host(u) || 'link' }));
+    let body = line.replace(URL_RE, '').replace(/\s+[–—-]\s*$/, '').replace(/\s{2,}/g, ' ').trim();
+    let b = { isH: false, isLine: true, hasLead: false, lead: '', leadW: '0', weight: 400, linkPad: '0' };
+    let m;
+    if (/^#{1,3}\s/.test(body)) b = Object.assign(b, { isH: true, isLine: false, text: body.replace(/^#+\s*/, '') });
+    else if ((m = body.match(/^day\s*(\d+)\s*[:.\-–]\s*(.*)$/i))) b = Object.assign(b, { hasLead: true, lead: 'Day ' + m[1], leadW: '52px', text: m[2], linkPad: '62px' });
+    else if ((m = body.match(/^[-•*]\s+(.*)$/))) b = Object.assign(b, { hasLead: true, lead: '•', leadW: '10px', text: m[1], linkPad: '20px' });
+    else if ((m = body.match(/^([A-Za-z’' ]{2,24}):\s*(.*)$/))) b = Object.assign(b, { hasLead: true, lead: m[1], leadW: '0', text: m[2] });
+    else b.text = body;
+    if (!b.text && !b.isH) b.isLine = !!b.lead;
+    out.push(Object.assign(b, { links, hasLinks: links.length > 0, pt: gap ? '10px' : '0' }));
+    gap = false;
+  });
+  return out;
+}
+const SCHEMA = `{ "text": "The whole pitch as plain text. Short paragraphs plus lines like 'Where: ...', 'Stay: ... <link>', 'Getting there: ...', 'Day 1: ...', 'Cost per person: ~$000'. Put links inline." }`;
+function normPitch(o) {
+  if (typeof o === 'string') return { text: o };
+  const t = o.text || o.canvas || (typeof o.pitch === 'string' ? o.pitch : (o.pitch && o.pitch.text)) || '';
+  return { text: String(t) };
+}
+function parseJSON(txt) {
+  const a = txt.indexOf('{'), b = txt.lastIndexOf('}');
+  if (a < 0 || b < a) throw new Error('no json');
+  return JSON.parse(txt.slice(a, b + 1));
+}
+
+function demo() {
+  const start = '2026-11-01', end = '2026-12-13';
+  const people = ['Maya', 'Jonah', 'Priya', 'Leo', 'Sam', 'Ana'].map((n, i) => ({ id: 'p' + (i + 1), name: n, veto: null, hue: HUES[i] }));
+  const inR = (d, a, b) => d >= a && d <= b;
+  const wk = d => [5, 6, 0].includes(wd(d));
+  const rules = {
+    p1: d => wk(d) || inR(d, '2026-11-23', '2026-11-27'),
+    p2: d => (wk(d) && !inR(d, '2026-11-06', '2026-11-08')) || inR(d, '2026-12-01', '2026-12-05'),
+    p3: d => inR(d, '2026-11-12', '2026-11-25') || inR(d, '2026-12-11', '2026-12-13'),
+    p4: d => (wk(d) && !inR(d, '2026-12-11', '2026-12-13')) || inR(d, '2026-11-26', '2026-11-29'),
+    p5: d => inR(d, '2026-11-13', '2026-11-15') || inR(d, '2026-11-20', '2026-11-29') || inR(d, '2026-12-04', '2026-12-06'),
+    p6: () => false
+  };
+  const avail = {};
+  people.forEach(p => { avail[p.id] = dayList(start, end).filter(rules[p.id]); });
+  people[3].veto = 'd2';
+  people[1].userEmail = 'jonah@gmail.com';
+  return {
+    id: 'demo', name: 'Friendsgiving-ish getaway', start, end, people, avail,
+    dests: [
+      { id: 'd1', name: 'Lake Tahoe', note: 'Cabin with a hot tub, 3.5h drive', addedBy: 'p1', approvals: ['p1', 'p2', 'p4', 'p5'], created: 1,
+        pitch: { text: "Big cabin, hot tub, maybe early snow. Thanksgiving week is quiet before ski season really starts. One giant dinner, one real hike, a lot of hot tub.\n\nWhere: South Lake Tahoe, CA\nStay: 4BR cabin with hot tub, sleeps 8, $340/night https://www.airbnb.com/s/South-Lake-Tahoe\nBackup: 3BR lakeside condo, $260/night https://www.vrbo.com/search?destination=South%20Lake%20Tahoe\nGetting there: drive from SF, about 3.5h in two cars. Or fly SFO → RNO, around $140 round trip.\n\nDay 1: Drive up, big grocery run, hot tub\nDay 2: Eagle Lake hike, Friendsgiving dinner\nDay 3: Lazy morning, Heavenly gondola if it’s open\nDay 4: Pack up, brunch in town, drive home\n\nCost per person: ~$372 (cabin $227, gas $35, groceries $60, activities $50)" },
+        reactions: { all: { '😍': ['p2', 'p5'], '👍': ['p4'], '💸': ['p3'] } },
+        comments: [
+          { id: 'c1', by: 'p2', text: 'Does the cabin allow dogs?', q: true, done: true },
+          { id: 'c2', by: 'p3', text: 'Is the hot tub actually working? The last listing we booked lied.', q: true, done: false },
+          { id: 'c3', by: 'p5', text: 'I can drive one of the cars.', q: false }
+        ] },
+      { id: 'd2', name: 'Joshua Tree', note: 'Stars, desert, cheap Airbnbs', addedBy: 'p3', approvals: ['p3', 'p1', 'p5'], created: 2,
+        pitch: { text: 'Desert, huge skies, very little cell signal. November is perfect hiking weather.\n\nWhere: Joshua Tree, CA\n- Sunrise at Ryan Mountain\n- Stargazing, obviously\n\nCost per person: ~$190' },
+        reactions: { all: { '😍': ['p1'] } }, comments: [] },
+      { id: 'd3', name: 'Big Sur', note: "Camping if it's not raining", addedBy: 'p2', approvals: ['p2', 'p3', 'p1'], created: 3 },
+      { id: 'd4', name: 'Portland', note: '', addedBy: 'p5', approvals: ['p5'], created: 4 }
+    ]
+  };
+}
+
+function load() {
+  let db = null, ui = {};
+  try { db = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+  try { ui = JSON.parse(localStorage.getItem(KEY + ':ui')) || {}; } catch (e) {}
+  if (!db || !db.trips) db = { trips: { demo: demo() }, me: {}, order: ['demo'] };
+  if (!db.trips[ui.tripId]) ui.screen = 'home';
+  return { db, ui };
+}
+
+class Component extends DCLogic {
+  state = (() => {
+    const { db, ui } = load();
+    return {
+      db, screen: ui.screen || 'home', tripId: ui.tripId || 'demo', tab: ui.tab || 'dates', mode: ui.mode || 'group',
+      sel: null, sheet: false, newName: '', pitchId: ui.pitchId || null, edit: null, draft: null, cText: '', cQ: false,
+      g: null, gEmail: '', gErr: '', aiOpen: false, aiAsk: '', aiBusy: false, aiErr: '', aiPaste: '', apiOpen: false, dName: '', dNote: '', toast: null, formErr: '',
+      form: { name: '', start: '2026-11-01', end: '2026-12-13' }
+    };
+  })();
+
+  componentDidUpdate() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify(this.state.db));
+      const { screen, tripId, tab, mode, pitchId } = this.state;
+      localStorage.setItem(KEY + ':ui', JSON.stringify({ screen, tripId, tab, mode, pitchId }));
+    } catch (e) {}
+  }
+
+  setTrip(fn) {
+    this.setState(s => {
+      const t = clone(s.db.trips[s.tripId]);
+      fn(t);
+      return { db: Object.assign({}, s.db, { trips: Object.assign({}, s.db.trips, { [s.tripId]: t }) }) };
+    });
+  }
+
+  snapshot() { const s = this.state; const t = clone(s.db.trips[s.tripId]); return () => this.setTrip(tr => Object.assign(tr, t)); }
+
+  toast(msg, undo, label) {
+    clearTimeout(this.tt);
+    this.setState({ toast: { msg, undo, label: label || 'Undo' } });
+    this.tt = setTimeout(() => this.setState({ toast: null }), 4500);
+  }
+
+  openPitch(id) {
+    this.setState({ pitchId: id, edit: null, draft: null, aiOpen: false, aiErr: '', cText: '', cQ: false });
+    try { window.scrollTo(0, 0); } catch (e) {}
+  }
+
+  setDest(id, fn) { this.setTrip(tr => { const d = tr.dests.find(q => q.id === id); if (d) fn(d, tr); }); }
+
+  applyPitch(id, obj, src) {
+    const undo = this.snapshot();
+    const p = normPitch(obj);
+    this.setDest(id, d => { d.pitch = p; d.ai = src; });
+    this.setState({ edit: null, draft: null, aiOpen: false, aiBusy: false, aiErr: '', aiPaste: '' });
+    this.toast((src ? src + ' drafted the pitch.' : 'Pitch updated.'), undo);
+  }
+
+  aiContext(t, d) {
+    const people = t.people.map(p => p.name);
+    const r = this.bestRange;
+    const when = r ? 'Best dates: ' + r.label + ' (' + r.len + ').' : 'Date window: ' + t.start + ' to ' + t.end + '.';
+    return 'Trip: "' + t.name + '". Destination: ' + d.name + (d.note ? ' (' + d.note + ')' : '') + '. Group of ' + people.length + ': ' + people.join(', ') + '. ' + when;
+  }
+
+  agentUrl(t, me) { return 'https://outward.trip/api/agent/' + (me.token || ('ag_' + t.id + me.id).replace(/[^a-z0-9_]/gi, '').slice(0, 20)); }
+
+  aiPrompt(t, d, me) {
+    const url = this.agentUrl(t, me);
+    return 'Help me pitch a destination for a group trip.\n' + this.aiContext(t, d) +
+      '\n\n1. GET ' + url + ' for the latest dates, people and places.' +
+      '\n2. Plan the trip to ' + d.name + ' for that group and those dates. Ask me about budget or must-dos first if you need to.' +
+      '\n3. PUT the plan to ' + url + '/places/' + d.id + '/pitch with a JSON body of { "author": "<your name, e.g. Claude>", "pitch": <plan> } where <plan> is:\n' + SCHEMA +
+      '\n\nRules: keep it skimmable, under 250 words. Include a "Cost per person: ~$N" line (USD, lodging split across the group) and "Day N:" lines for the plan. Only include URLs you are confident exist (search pages are fine).' +
+      '\nIf you cannot make web requests, reply with only the <plan> JSON and I will paste it in.';
+  }
+
+  async aiDraft(t, d) {
+    if (!window.claude || !window.claude.complete) return this.setState({ aiErr: 'Claude is not available in this preview.' });
+    this.setState({ aiBusy: true, aiErr: '' });
+    try {
+      const txt = await window.claude.complete({ messages: [{ role: 'user', content: this.aiPrompt(t, d) }], max_tokens: 2000 });
+      this.applyPitch(d.id, parseJSON(txt), 'Claude');
+    } catch (e) {
+      this.setState({ aiBusy: false, aiErr: "Couldn't draft that. Try again or tweak the request." });
+    }
+  }
+
+  startEdit(p, ins) {
+    const base = p.text || '';
+    this.setState({ edit: 'canvas', draft: ins ? (base ? base.replace(/\s*$/, '') + '\n\n' : '') + ins : base });
+  }
+
+  saveEdit() {
+    const v = String(this.state.draft || '').replace(/\s+$/, '');
+    this.setDest(this.state.pitchId, d => { d.pitch = { text: v }; });
+    this.setState({ edit: null, draft: null });
+  }
+
+  setDb(fn) { this.setState(s => { const db = clone(s.db); fn(db); return { db }; }); }
+
+  inApp() { return /Instagram|FBAN|FBAV|Line\/|Snapchat|TikTok|WhatsApp/i.test(navigator.userAgent || ''); }
+
+  startGoogle(mode, pid) {
+    if (this.inApp()) return this.toast('Open this link in Safari or Chrome to sign in with Google.');
+    const s = this.state, t = s.db.trips[s.tripId];
+    if (s.db.account && mode !== 'claim') return this.completeGoogle(mode, pid, s.db.account.email);
+    const p = t && t.people.find(q => q.id === (pid || s.db.me[t.id]));
+    this.setState({ g: { mode, pid }, gErr: '', gEmail: s.db.account ? s.db.account.email : (p ? p.name.toLowerCase().replace(/[^a-z0-9]/g, '') + '@gmail.com' : '') });
+  }
+
+  completeGoogle(mode, pid, email) {
+    const s = this.state, t = s.db.trips[s.tripId];
+    const owned = t && t.people.find(q => q.userEmail === email);
+    if (mode === 'claim') {
+      const p = t.people.find(q => q.id === pid);
+      if (p.userEmail !== email) return this.setState({ gErr: 'That isn’t the Google account ' + p.name + ' used.' });
+    }
+    this.setDb(db => {
+      db.account = { email };
+      if (!t) return;
+      const tr = db.trips[t.id];
+      if (mode === 'link') {
+        const meId = db.me[t.id];
+        tr.people.forEach(q => { if (q.userEmail === email && q.id !== meId) delete q.userEmail; });
+        const me = tr.people.find(q => q.id === meId); if (me) me.userEmail = email;
+      } else if (mode === 'claim') db.me[t.id] = pid;
+      else if (owned) db.me[t.id] = owned.id;
+    });
+    this.setState({ g: null, sheet: mode === 'find' && !owned ? true : false });
+    if (mode === 'link') this.toast('Signed in. “' + (t.people.find(q => q.id === s.db.me[t.id]) || {}).name + '” is locked to you.');
+    else if (mode === 'claim') this.toast('Welcome back, ' + t.people.find(q => q.id === pid).name + '.');
+    else this.toast(owned ? 'Welcome back, ' + owned.name + '.' : 'Signed in. Pick your name to join this trip.');
+  }
+
+  openTrip(id) {
+    const acct = this.state.db.account;
+    if (acct && !this.state.db.me[id]) { const o = this.state.db.trips[id].people.find(q => q.userEmail === acct.email); if (o) this.setDb(db => { db.me[id] = o.id; }); }
+    const db = this.state.db, me = db.me[id], t = db.trips[id];
+    const mine = me && (t.avail[me] || []).length;
+    this.setState({ screen: 'trip', tripId: id, tab: 'dates', mode: mine ? 'group' : 'mine', sel: null });
+  }
+
+  createTrip() {
+    const f = this.state.form;
+    if (!f.name.trim()) return this.setState({ formErr: 'Give the trip a name.' });
+    if (!f.start || !f.end) return this.setState({ formErr: 'Pick a start and end date.' });
+    const span = (P(f.end) - P(f.start)) / DAY;
+    if (span < 0) return this.setState({ formErr: 'End date is before the start.' });
+    if (span > 89) return this.setState({ formErr: 'Keep the window to 90 days or less.' });
+    const id = uid();
+    const t = { id, name: f.name.trim(), start: f.start, end: f.end, people: [], avail: {}, dests: [] };
+    this.setState(s => ({
+      db: Object.assign({}, s.db, { trips: Object.assign({}, s.db.trips, { [id]: t }), order: [id].concat(s.db.order || []) }),
+      screen: 'trip', tripId: id, tab: 'dates', mode: 'mine', formErr: '', sel: null,
+      form: { name: '', start: f.start, end: f.end }
+    }));
+  }
+
+  setMe(pid, extra) {
+    this.setState(s => Object.assign({ db: Object.assign({}, s.db, { me: Object.assign({}, s.db.me, { [s.tripId]: pid }) }), sheet: false, newName: '' }, extra));
+  }
+
+  join(pid) {
+    const t = this.state.db.trips[this.state.tripId];
+    const p = t.people.find(q => q.id === pid), acct = this.state.db.account;
+    if (p.userEmail && (!acct || acct.email !== p.userEmail)) return this.startGoogle('claim', pid);
+    this.setMe(pid, (t.avail[pid] || []).length ? {} : { mode: 'mine' });
+  }
+
+  joinNew() {
+    const name = this.state.newName.trim();
+    if (!name) return;
+    const t = this.state.db.trips[this.state.tripId];
+    const ex = t.people.find(p => p.name.toLowerCase() === name.toLowerCase());
+    if (ex) return this.join(ex.id);
+    const acct = this.state.db.account;
+    const id = uid();
+    const hue = HUES[t.people.length % HUES.length];
+    this.setTrip(tr => { tr.people.push(Object.assign({ id, name, veto: null, hue, token: 'ag_' + uid() + uid() }, acct && !tr.people.some(q => q.userEmail === acct.email) ? { userEmail: acct.email } : {})); tr.avail[id] = []; });
+    this.setMe(id, { mode: 'mine', tab: 'dates' });
+  }
+
+  addDest() {
+    const s = this.state, name = s.dName.trim();
+    if (!name) return;
+    const t = s.db.trips[s.tripId], meId = s.db.me[t.id];
+    if (!meId) return this.setState({ sheet: true });
+    if (t.dests.some(d => d.name.toLowerCase() === name.toLowerCase())) return this.toast(name + ' is already on the list.');
+    const id = uid();
+    this.setTrip(tr => tr.dests.push({ id, name, note: s.dNote.trim(), addedBy: meId, approvals: [meId], created: Date.now(), pitch: blank(), reactions: {}, comments: [] }));
+    this.setState({ dName: '', dNote: '' });
+    this.toast('Added ' + name + '. Make the case for it?', () => this.openPitch(id), 'Write pitch');
+  }
+
+  share(t) {
+    const url = 'https://outward.trip/t/' + t.id;
+    if (navigator.share) { navigator.share({ title: t.name, text: 'Mark your free days for ' + t.name, url }).catch(() => {}); return; }
+    try { navigator.clipboard.writeText(url); } catch (e) {}
+    this.toast('Link copied. Paste it in the group chat.');
+  }
+
+  renderVals() {
+    const s = this.state;
+    const ws = this.props.weekStartsMonday ? 1 : 0;
+    const minDays = Math.max(1, this.props.rangeMinDays ?? 2);
+    const publicVetoes = this.props.publicVetoes ?? true;
+    const db = s.db;
+    const recent = (db.order || Object.keys(db.trips)).filter(id => db.trips[id]).map(id => {
+      const t = db.trips[id];
+      return { name: t.name, sub: MD(P(t.start)) + ' – ' + MD(P(t.end)) + ' · ' + t.people.length + (t.people.length === 1 ? ' person' : ' people'), open: () => this.openTrip(id) };
+    });
+    const acct = db.account;
+    const gp = s.g && db.trips[s.tripId] && db.trips[s.tripId].people.find(q => q.id === s.g.pid);
+    const finishG = () => { const e = s.gEmail.trim().toLowerCase(); if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/.test(e)) return this.setState({ gErr: 'Enter an email address.' }); this.completeGoogle(s.g.mode, s.g.pid, e); };
+    const base = {
+      isHome: s.screen === 'home', isTrip: s.screen === 'trip', recent,
+      recentLabel: acct ? 'Your trips' : 'Trips on this device', signedIn: !!acct, accountEmail: acct ? acct.email : '',
+      signOut: () => { this.setDb(db => { db.account = null; }); this.toast('Signed out. Names on this device stay picked.'); },
+      gOpen: !!s.g, gEmail: s.gEmail, gErr: s.gErr, hasGErr: !!s.gErr,
+      gTitle: s.g ? (s.g.mode === 'claim' && gp ? 'Sign in as ' + gp.name : s.g.mode === 'link' ? 'Lock your name' : 'Find your name') : '',
+      gSub: s.g ? (s.g.mode === 'claim' && gp ? gp.name + ' locked this name with Google. Use the same account to continue.' : s.g.mode === 'link' ? 'Your real app opens Google’s account picker here.' : 'If you joined on another device, we’ll find your name.') : '',
+      onGEmail: e => this.setState({ gEmail: e.target.value, gErr: '' }), onGKey: e => { if (e.key === 'Enter') finishG(); },
+      finishGoogle: finishG, closeGoogle: () => this.setState({ g: null }),
+      inApp: this.inApp(),
+      form: s.form, formErr: s.formErr, hasFormErr: !!s.formErr,
+      onFormName: e => this.setState({ form: Object.assign({}, s.form, { name: e.target.value }), formErr: '' }),
+      onFormStart: e => this.setState({ form: Object.assign({}, s.form, { start: e.target.value }), formErr: '' }),
+      onFormEnd: e => this.setState({ form: Object.assign({}, s.form, { end: e.target.value }), formErr: '' }),
+      createTrip: () => this.createTrip(),
+      toast: s.toast || { msg: '' }, hasToast: !!s.toast, toastHasUndo: !!(s.toast && s.toast.undo),
+      toastUndo: () => { const u = s.toast && s.toast.undo; this.setState({ toast: null }); if (u) u(); }
+    };
+    const t = db.trips[s.tripId];
+    if (s.screen !== 'trip' || !t) return Object.assign(base, { isTrip: false, isHome: true, isPitch: false, sheetOpen: false });
+
+    const meId = db.me[t.id];
+    const me = t.people.find(p => p.id === meId);
+    const col = p => ({ bg: `oklch(0.86 0.07 ${p.hue})`, fg: `oklch(0.3 0.07 ${p.hue})` });
+    const active = t.people.filter(p => (t.avail[p.id] || []).length);
+    const pending = t.people.filter(p => !(t.avail[p.id] || []).length);
+    const nA = active.length;
+    const free = {};
+    active.forEach(p => (t.avail[p.id] || []).forEach(d => { (free[d] = free[d] || []).push(p.id); }));
+    const mine = new Set(me ? t.avail[me.id] || [] : []);
+    const days = dayList(t.start, t.end);
+    const s0 = P(t.start), e0 = P(t.end);
+    const cnt = d => (free[d] || []).length;
+    const isAll = d => nA > 0 && cnt(d) === nA;
+
+    const runs = test => {
+      const out = []; let cur = null;
+      days.forEach(d => { if (test(d)) { if (cur) cur.push(d); else cur = [d]; } else if (cur) { out.push(cur); cur = null; } });
+      if (cur) out.push(cur);
+      return out.filter(r => r.length >= minDays);
+    };
+    const rangeLabel = r => r.length > 1 ? SHORT(P(r[0])) + ' – ' + SHORT(P(r[r.length - 1])) : SHORT(P(r[0]));
+    const goSel = d => this.setState({ mode: 'group', sel: d });
+    const allRuns = runs(isAll);
+    this.bestRange = allRuns[0] ? { label: rangeLabel(allRuns[0]), len: allRuns[0].length + ' days' } : null;
+    let ranges = allRuns.map(r => ({ label: rangeLabel(r), detail: 'All ' + nA + ' free', len: r.length + (r.length === 1 ? ' day' : ' days'), bg: '#C2491C', fg: '#FFFCF5', onTap: () => goSel(r[0]) }));
+    let rangesTitle = "Everyone's free";
+    let noRangesText = '';
+    if (!allRuns.length) {
+      if (nA < 2) noRangesText = nA === 0 ? 'Nobody has marked days yet. Start with yours.' : 'Waiting on more people to mark their days.';
+      else {
+        const near = runs(d => cnt(d) === nA - 1).slice(0, 3);
+        rangesTitle = 'Closest so far';
+        noRangesText = near.length ? '' : 'No overlap yet. Try marking a few more days.';
+        ranges = near.map(r => {
+          const missing = active.filter(p => r.some(d => !(free[d] || []).includes(p.id))).map(p => p.name);
+          return { label: rangeLabel(r), detail: 'Missing ' + missing.join(', '), len: r.length + ' days', bg: 'oklch(0.48 0.1 190)', fg: '#FFFCF5', onTap: () => goSel(r[0]) };
+        });
+      }
+    }
+
+    const isMine = s.mode === 'mine' && !!me;
+    const months = [];
+    for (let c = Date.UTC(new Date(s0).getUTCFullYear(), new Date(s0).getUTCMonth(), 1); c <= e0;) {
+      const dt = new Date(c), y = dt.getUTCFullYear(), m = dt.getUTCMonth();
+      const lead = (dt.getUTCDay() - ws + 7) % 7;
+      const last = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+      const cells = [];
+      for (let i = 0; i < lead; i++) cells.push({ label: '', vis: 'hidden', disabled: true, bg: 'transparent', border: 'transparent', fg: '#000', ring: 'none', opacity: 1, dot: 0, onTap: null });
+      for (let n = 1; n <= last; n++) {
+        const tt = Date.UTC(y, m, n), d = F(tt), inW = tt >= s0 && tt <= e0;
+        let bg = '#FFFCF5', fg = '#1D2326', border = '#E3DAC7', ring = 'none', dot = 0;
+        if (!inW) { bg = 'transparent'; border = 'transparent'; fg = '#A9A595'; }
+        else if (isMine) {
+          if (mine.has(d)) { bg = '#1D2326'; fg = '#FFFCF5'; border = '#1D2326'; }
+        } else {
+          const k = cnt(d);
+          if (isAll(d)) { bg = '#C2491C'; fg = '#FFFCF5'; border = '#C2491C'; }
+          else if (k > 0) { const r = k / nA; bg = `oklch(${(0.92 - 0.44 * r).toFixed(3)} ${(0.04 + 0.06 * r).toFixed(3)} 190)`; fg = r > 0.55 ? '#FFFCF5' : '#1D2326'; border = 'transparent'; }
+          dot = mine.has(d) ? 1 : 0;
+          if (s.sel === d) ring = '0 0 0 2.5px #F4EFE4, 0 0 0 4.5px #1D2326';
+        }
+        cells.push({
+          label: String(n), vis: 'visible', disabled: !inW, bg, fg, border, ring, dot, opacity: 1,
+          onTap: !inW ? null : isMine
+            ? () => this.setTrip(tr => { const a = new Set(tr.avail[meId] || []); a.has(d) ? a.delete(d) : a.add(d); tr.avail[meId] = [...a].sort(); })
+            : () => this.setState({ sel: s.sel === d ? null : d })
+        });
+      }
+      months.push({ label: fmt(c, { month: 'long', year: 'numeric' }), cells });
+      c = Date.UTC(y, m + 1, 1);
+    }
+    const wdNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+    const weekdays = wdNames.slice(ws).concat(wdNames.slice(0, ws));
+
+    let sel = { label: '', countLabel: '', people: [] };
+    if (s.sel && !isMine) {
+      const f = free[s.sel] || [];
+      sel = {
+        label: SHORT(P(s.sel)),
+        countLabel: nA ? f.length + ' of ' + nA + ' free' : 'No one has marked days yet',
+        people: active.map(p => f.includes(p.id) ? Object.assign({ name: p.name, strike: 'none' }, col(p)) : { name: p.name, bg: 'rgba(255,252,245,0.12)', fg: '#B9B5A8', strike: 'line-through' })
+      };
+    }
+
+    const ranked = t.dests.map(d => Object.assign({}, d, { n: d.approvals.length })).sort((a, b) => b.n - a.n || a.created - b.created);
+    const nameOf = id => id === meId ? 'you' : (t.people.find(p => p.id === id) || { name: 'someone' }).name;
+    const needMe = () => { if (!me) { this.setState({ sheet: true }); return true; } return false; };
+    const dests = ranked.map((d, i) => {
+      const vetoers = t.people.filter(p => p.veto === d.id);
+      const up = !!me && d.approvals.includes(meId);
+      const myVeto = !!me && me.veto === d.id;
+      const pp = pz(d), tot = ptotal(pp), nf = pp.text.trim() ? 1 : 0, nc = (d.comments || []).length;
+      return {
+        id: d.id, open: () => this.openPitch(d.id),
+        hasCost: tot > 0, costLabel: '~' + money(tot) + ' / person',
+        pitchLabel: nf ? 'See the pitch' : 'Pitch this place',
+        pitchSub: nf ? pp.text.trim().split(/\s+/).length + ' words' + (nc ? ' · ' + nc + (nc === 1 ? ' comment' : ' comments') : '') + (d.ai ? ' · drafted with ' + d.ai : '') : 'Nobody has made the case yet. Write one or draft it with AI.',
+        pitchBorderStyle: nf ? 'solid' : 'dashed', pitchBorder: nf ? '#E3DAC7' : '#B9AE96', pitchBg: nf ? '#F4EFE4' : 'transparent',
+        rank: i + 1, name: d.name, note: d.note, hasNote: !!d.note, by: 'Added by ' + nameOf(d.addedBy),
+        count: d.n, countUnit: d.n === 1 ? 'thumb' : 'thumbs',
+        approvers: d.approvals.map(id => t.people.find(p => p.id === id)).filter(Boolean).map(p => Object.assign({ name: p.name }, col(p))),
+        vetoed: vetoers.length > 0,
+        vetoLabel: publicVetoes ? 'Vetoed by ' + vetoers.map(p => nameOf(p.id)).join(', ') : (vetoers.length > 1 ? vetoers.length + ' vetoes' : 'Vetoed'),
+        border: vetoers.length ? '#E9B9A8' : '#E3DAC7',
+        upBg: up ? '#1D2326' : '#FFFCF5', upFg: up ? '#FFFCF5' : '#1D2326', upBorder: '#1D2326', upText: up ? "You're in" : "I'd go",
+        vetoBg: myVeto ? '#A3311C' : 'transparent', vetoFg: myVeto ? '#FFFCF5' : '#A3311C', vetoBorder: myVeto ? '#A3311C' : '#E2B3A4', vetoText: myVeto ? 'Your veto' : 'Veto',
+        onUp: () => { if (needMe()) return; this.setTrip(tr => { const x = tr.dests.find(q => q.id === d.id); x.approvals = x.approvals.includes(meId) ? x.approvals.filter(a => a !== meId) : x.approvals.concat(meId); }); },
+        onVeto: () => {
+          if (needMe()) return;
+          const prev = me.veto && t.dests.find(q => q.id === me.veto);
+          const undo = this.snapshot();
+          this.setTrip(tr => { const p = tr.people.find(q => q.id === meId); p.veto = p.veto === d.id ? null : d.id; });
+          if (myVeto) this.toast('Veto removed. You can use it elsewhere.');
+          else if (prev) this.toast('Veto moved from ' + prev.name + ' to ' + d.name + '.', undo);
+          else this.toast('You vetoed ' + d.name + '. That was your one veto.', undo);
+        },
+        onRemove: () => {
+          const undo = this.snapshot();
+          this.setTrip(tr => { tr.dests = tr.dests.filter(q => q.id !== d.id); tr.people.forEach(p => { if (p.veto === d.id) p.veto = null; }); });
+          this.toast(d.name + ' removed.', undo);
+        }
+      };
+    });
+    const myVetoDest = me && me.veto && t.dests.find(q => q.id === me.veto);
+
+    const pd = s.pitchId && t.dests.find(q => q.id === s.pitchId);
+    const pv = pd && dests.find(q => q.id === pd.id);
+    let pitch = { comments: [] }, pitchExtra = {};
+    if (pd) {
+      const p = pz(pd), tot = ptotal(p), loc = locOf(p), editing = s.edit === 'canvas';
+      const rx = (pd.reactions || {}).all || {};
+      const cv = {
+        viewing: !editing, editing, empty: !p.text.trim(), filled: !!p.text.trim(), border: editing ? '#1D2326' : '#E3DAC7',
+        blocks: blocksOf(p.text),
+        byline: pd.ai ? 'The pitch · via ' + pd.ai : 'The pitch',
+        onEdit: () => { if (needMe()) return; this.startEdit(p); },
+        ideas: IDEAS.map(i => ({
+          label: i.label,
+          start: () => { if (needMe()) return; this.startEdit(p, i.ins); },
+          insert: () => this.setState(st => { const d0 = String(st.draft || '').replace(/\s*$/, ''); return { draft: (d0 ? d0 + '\n' : '') + i.ins }; })
+        })),
+        reacts: EMO.map(e => {
+          const ids = rx[e] || [], on = !!meId && ids.includes(meId);
+          return {
+            e, n: ids.length || '', who: ids.map(nameOf).join(', '), border: on ? '#1D2326' : '#E3DAC7', bg: on ? '#EDE5D4' : '#fff', opacity: ids.length || on ? 1 : 0.7,
+            toggle: () => { if (needMe()) return; this.setDest(pd.id, d => { d.reactions = d.reactions || {}; const a = d.reactions.all = d.reactions.all || {}; const l = a[e] || []; a[e] = l.includes(meId) ? l.filter(q => q !== meId) : l.concat(meId); }); }
+          };
+        })
+      };
+      const pitcher = nameOf(pd.addedBy);
+      const comments = (pd.comments || []).map(c => {
+        const pr = t.people.find(q => q.id === c.by) || { name: '?', hue: 0 };
+        return Object.assign({
+          name: c.by === meId ? 'You' : pr.name, initial: pr.name[0].toUpperCase(), text: c.text, isQ: !!c.q,
+          tag: c.done ? 'Answered' : 'Question', tagBg: c.done ? '#DCEBE5' : '#FBE6C9', tagFg: c.done ? '#1F5A43' : '#7A4A0E',
+          canAnswer: !!c.q && !c.done, markDone: () => this.setDest(pd.id, d => { const q = d.comments.find(z => z.id === c.id); q.done = true; })
+        }, col(pr));
+      });
+      const openQ = (pd.comments || []).filter(c => c.q && !c.done).length;
+      pitch = {
+        name: pd.name, byLabel: 'Pitched by ' + pitcher + (pd.ai ? ' · drafted with ' + pd.ai : ''),
+        hasLoc: !!loc, loc, mapUrl: 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(loc || pd.name),
+        costBig: tot ? '~' + money(tot) : '—', count: pv.count, countSub: pv.count === 1 ? 'person wants to go' : 'people want to go',
+        vetoed: pv.vetoed, vetoLabel: pv.vetoLabel,
+        editHint: 'Anyone in the group can add to this.',
+        comments, noComments: !comments.length, openQLabel: openQ ? openQ + ' open ' + (openQ === 1 ? 'question' : 'questions') : '',
+        onUp: pv.onUp, onVeto: pv.onVeto, upBg: pv.upBg, upFg: pv.upFg, upText: pv.upText, vetoBg: pv.vetoBg, vetoFg: pv.vetoFg, vetoBorder: pv.vetoBorder, vetoText: pv.vetoText
+      };
+      const sendComment = () => {
+        const txt = s.cText.trim(); if (!txt || needMe()) return;
+        this.setDest(pd.id, d => { d.comments = (d.comments || []).concat({ id: uid(), by: meId, text: txt, q: s.cQ, done: false }); });
+        this.setState({ cText: '', cQ: false });
+      };
+      pitchExtra = {
+        closePitch: () => this.setState({ pitchId: null, edit: null }), cv,
+        draftText: typeof s.draft === 'string' ? s.draft : '', onDraftText: e => this.setState({ draft: e.target.value }),
+        saveEdit: () => this.saveEdit(), cancelEdit: () => this.setState({ edit: null, draft: null }),
+        cText: s.cText, onCText: e => this.setState({ cText: e.target.value }), onCKey: e => { if (e.key === 'Enter') sendComment(); }, sendComment,
+        cPlaceholder: s.cQ ? 'Ask ' + pitcher + ' something…' : 'Add a comment…',
+        toggleQ: () => this.setState({ cQ: !s.cQ }), qLabel: s.cQ ? '✓ Asking as a question' : '? Ask as a question',
+        qBorder: s.cQ ? '#7A4A0E' : '#D9CFBA', qBg: s.cQ ? '#FBE6C9' : '#fff', qFg: s.cQ ? '#7A4A0E' : '#1D2326',
+        aiOpen: s.aiOpen, aiChevron: s.aiOpen ? '−' : '+', toggleAi: () => { if (needMe()) return; this.setState({ aiOpen: !s.aiOpen }); },
+        aiStepText: 'Opens a new chat with everything filled in: who’s coming, the dates, and your AI link. Hit send and it plans ' + pd.name + ' for ' + t.people.length + ' people' + (this.bestRange ? ' on ' + this.bestRange.label : '') + ', and posts the pitch back to this page.',
+        agentUrl: me ? this.agentUrl(t, me) : '', agentNote: me ? 'Only for you. Anything posted with it shows as “' + me.name + '’s AI”. Treat it like a password.' : '',
+        copyAgentUrl: () => { try { navigator.clipboard.writeText(this.agentUrl(t, me)); } catch (e) {} this.toast('Your AI link is copied.'); },
+        aiApps: me ? AI_APPS.map(a => {
+          const fav = db.prefAi === a.k;
+          return {
+            name: a.name, sub: fav ? 'Last used' : a.sub, border: fav ? '#E06A33' : '#3A4247', bg: fav ? '#E06A33' : '#272E31', fg: fav ? '#1D2326' : '#FFFCF5',
+            open: () => {
+              const pr = this.aiPrompt(t, pd, me);
+              try { navigator.clipboard.writeText(pr); } catch (e) {}
+              window.open(a.url(pr), '_blank', 'noopener');
+              this.setState(st => ({ db: Object.assign({}, st.db, { prefAi: a.k }) }));
+              this.toast(a.verified ? 'Opening ' + a.name + '. Hit send there.' : 'Opening ' + a.name + '. If the box is empty, paste — it’s copied.');
+            }
+          };
+        }) : [],
+        copyPrompt: () => { try { navigator.clipboard.writeText(this.aiPrompt(t, pd, me)); } catch (e) {} this.toast('Instructions copied. Paste them into your AI.'); },
+        aiPaste: s.aiPaste, onAiPaste: e => this.setState({ aiPaste: e.target.value }),
+        importPaste: () => { if (needMe()) return; try { this.applyPitch(pd.id, parseJSON(s.aiPaste), me.name + '’s AI'); } catch (e) { this.toast("That isn't valid JSON. Ask your AI for only the JSON."); } },
+        apiOpen: s.apiOpen, toggleApi: () => this.setState({ apiOpen: !s.apiOpen }), apiToggleLabel: (s.apiOpen ? '− ' : '+ ') + 'Endpoint details',
+        apiText: me ? (() => { const u = this.agentUrl(t, me); return 'GET  ' + u + '\n  → trip, people, best dates, places\n\nPUT  ' + u + '/places/' + pd.id + '/pitch\n  { "author": "Claude", "pitch": ' + SCHEMA.replace(/\n/g, '\n  ') + ' }\n\nPOST ' + u + '/places\n  { "name": "...", "note": "...", "pitch": {…} }\n\nPOST ' + u + '/places/' + pd.id + '/comments\n  { "text": "...", "question": false }'; })() : ''
+      };
+    }
+
+    const sheetOpen = s.sheet || !me;
+    const tabOn = 'linear-gradient(#FFFCF5,#FFFCF5)';
+    return Object.assign(base, pitchExtra, {
+      trip: t, pitch, isPitch: !!pd, isTrip: !pd,
+      windowLabel: fmt(s0, { month: 'short', day: 'numeric' }) + ' – ' + fmt(e0, { month: 'short', day: 'numeric', year: 'numeric' }) + ' · ' + t.people.length + (t.people.length === 1 ? ' person' : ' people'),
+      avatars: t.people.map(p => Object.assign({ name: p.name, initial: p.name[0].toUpperCase(), ring: p.id === meId ? '0 0 0 2px #1D2326' : 'none' }, col(p))),
+      hasMe: !!me, meName: me ? me.name : '', meLocked: !!(me && me.userEmail),
+      showNudge: !!me && !me.userEmail && (t.avail[me.id] || []).length > 0 && !(db.nudgeOff || {})[t.id] && s.tab === 'dates',
+      linkGoogle: () => this.startGoogle('link'), dismissNudge: () => this.setDb(d0 => { d0.nudgeOff = Object.assign({}, d0.nudgeOff, { [t.id]: true }); }),
+      sheetGoogleText: acct ? 'Signed in as ' + acct.email + '.' : 'Joined on another device?',
+      sheetGoogleLabel: acct ? (me ? 'Lock my name' : 'Find my name') : 'Continue with Google',
+      sheetGoogle: () => this.startGoogle(acct && me ? 'link' : 'find'),
+      openSheet: () => this.setState({ sheet: true }), closeSheet: () => this.setState({ sheet: false, newName: '' }),
+      goHome: () => this.setState({ screen: 'home', sel: null }),
+      share: () => this.share(t),
+      isDates: s.tab === 'dates', isWhere: s.tab === 'where',
+      tabDates: () => this.setState({ tab: 'dates' }), tabWhere: () => this.setState({ tab: 'where', sel: null }),
+      tabDatesBg: s.tab === 'dates' ? '#FFFCF5' : 'transparent', tabWhereBg: s.tab === 'where' ? '#FFFCF5' : 'transparent',
+      tabDatesShadow: s.tab === 'dates' ? '0 1px 3px rgba(29,35,38,0.12)' : 'none', tabWhereShadow: s.tab === 'where' ? '0 1px 3px rgba(29,35,38,0.12)' : 'none',
+      rangesTitle, ranges, noRanges: !ranges.length, noRangesText: noRangesText || 'No overlap yet.',
+      respondedLabel: nA + ' of ' + t.people.length + ' marked',
+      hasPending: pending.length > 0,
+      pendingText: 'Not counted until they mark days: ' + pending.map(p => p.id === meId ? 'you' : p.name).join(', '),
+      isMine, isGroup: !isMine,
+      modeMine: () => { if (needMe()) return; this.setState({ mode: 'mine', sel: null }); }, modeGroup: () => this.setState({ mode: 'group' }),
+      mineBg: isMine ? '#1D2326' : 'transparent', mineFg: isMine ? '#FFFCF5' : '#1D2326',
+      groupBg: !isMine ? '#1D2326' : 'transparent', groupFg: !isMine ? '#FFFCF5' : '#1D2326',
+      mineHelp: mine.size ? mine.size + (mine.size === 1 ? ' day' : ' days') + ' marked. Saved as you tap.' : 'Tap every day you could go.',
+      fillWeekends: () => this.setTrip(tr => { const a = new Set(tr.avail[meId] || []); days.filter(d => [5, 6, 0].includes(wd(d))).forEach(d => a.add(d)); tr.avail[meId] = [...a].sort(); }),
+      clearMine: () => { const undo = this.snapshot(); this.setTrip(tr => { tr.avail[meId] = []; }); this.toast('Cleared your days.', undo); },
+      months, weekdays,
+      hasSel: !!s.sel && !isMine && s.tab === 'dates', sel, closeSel: () => this.setState({ sel: null }),
+      dName: s.dName, dNote: s.dNote,
+      onDName: e => this.setState({ dName: e.target.value }), onDNote: e => this.setState({ dNote: e.target.value }),
+      onDKey: e => { if (e.key === 'Enter') this.addDest(); }, addDest: () => this.addDest(),
+      vetoStatus: !me ? 'Everyone gets one veto.' : myVetoDest ? 'Your veto is on ' + myVetoDest.name + '. Tap another to move it.' : "You have one veto. Use it on a place you'd skip the trip for.",
+      noDests: !dests.length, dests,
+      sheetOpen, canCloseSheet: !!me, hasPeople: t.people.length > 0,
+      sheetPeople: t.people.map(p => Object.assign({
+        name: p.name, initial: p.name[0].toUpperCase(), border: p.id === meId ? '#1D2326' : '#E3DAC7', locked: !!p.userEmail,
+        sub: p.id === meId ? 'You' : p.userEmail && !(acct && acct.email === p.userEmail) ? 'Signed in' : (t.avail[p.id] || []).length ? (t.avail[p.id].length + ' days') : 'No days yet',
+        pick: () => this.join(p.id)
+      }, col(p))),
+      newLabel: t.people.length ? 'Not on the list?' : "You're first. What's your name?",
+      newName: s.newName, onNewName: e => this.setState({ newName: e.target.value }),
+      onNewKey: e => { if (e.key === 'Enter') this.joinNew(); }, joinNew: () => this.joinNew()
+    });
+  }
+}
+</script>
+</body>
+</html>
