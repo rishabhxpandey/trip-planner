@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { currentUser } from '@/auth';
 import { CreateTripForm } from '@/components/CreateTripForm';
 import { RecentTrips } from '@/components/RecentTrips';
@@ -26,6 +27,14 @@ export default async function Home() {
       </div>
       <CreateTripForm />
       <RecentTrips signedInEmail={user ? (user.email ?? 'Google') : null} mine={mine} />
+      <footer className="flex gap-4 pt-2 text-[13px] text-subtle">
+        <Link href="/privacy" className="text-subtle underline underline-offset-[3px]">
+          Privacy
+        </Link>
+        <Link href="/terms" className="text-subtle underline underline-offset-[3px]">
+          Terms
+        </Link>
+      </footer>
     </div>
   );
 }
