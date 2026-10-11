@@ -1,0 +1,81 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-ink: #1d2326;
+  --color-page: #f4efe4;
+  --color-surface: #fffcf5;
+  --color-track: #e8e0cf;
+  --color-chip: #ede5d4;
+  --color-line: #e3dac7;
+  --color-field: #d9cfba;
+  --color-dash: #b9ae96;
+  --color-muted: #5e5d56;
+  --color-subtle: #6b6a63;
+  --color-disabled: #a9a595;
+  --color-accent: #e06a33;
+  --color-everyone: #c2491c;
+  --color-closest: oklch(0.48 0.1 190);
+  --color-teal: #0f5f66;
+  --color-teal-tint: #e4eeec;
+  --color-teal-ink: #3d4a4c;
+  --color-danger: #a3311c;
+  --color-veto-bg: #f6dcd3;
+  --color-veto-fg: #8e2a17;
+  --color-veto-line: #e9b9a8;
+  --color-veto-soft: #e2b3a4;
+  --color-q-bg: #fbe6c9;
+  --color-q-fg: #7a4a0e;
+  --color-ans-bg: #dcebe5;
+  --color-ans-fg: #1f5a43;
+  --color-dk-field: #272e31;
+  --color-dk-line: #3a4247;
+  --color-dk-muted: #c9c4b6;
+  --color-dk-text: #e8e3d6;
+
+  --font-display: var(--font-bricolage), system-ui, sans-serif;
+  --font-sans: var(--font-instrument), system-ui, sans-serif;
+  --font-mono: ui-monospace, Menlo, monospace;
+
+  --shadow-tab: 0 1px 3px rgba(29, 35, 38, 0.12);
+  --shadow-float: 0 10px 30px rgba(29, 35, 38, 0.25);
+  --shadow-toast: 0 10px 30px rgba(29, 35, 38, 0.3);
+  --shadow-vote: 0 6px 20px rgba(29, 35, 38, 0.15);
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    margin: 0;
+    background: var(--color-page);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 15px;
+  }
+  a {
+    color: var(--color-ink);
+  }
+  a:hover {
+    color: var(--color-teal);
+  }
+  button:not(:disabled),
+  [role='button'] {
+    cursor: pointer;
+  }
+  input,
+  textarea,
+  button {
+    font: inherit;
+  }
+}
+
+@utility display {
+  font-family: var(--font-display);
+}
+
+@utility caps {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
