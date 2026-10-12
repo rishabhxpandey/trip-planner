@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { blocksOf, costOf, locationOf, parsePasted, rangesOf, rankDests, validateWindow, type Person } from './trip-derive.ts';
 
-const person = (id: string, days: string[]): Person => ({ id, name: id, hue: 35, locked: false, veto: null, days });
+const person = (id: string, days: string[]): Person => ({ id, name: id, hue: 35, locked: false, veto: null, days, joinedAt: '2026-01-01T00:00:00.000Z' });
 const trip = (people: Person[]) => ({ start: '2026-11-01', end: '2026-11-10', people });
 
 test('everyone-free ranges ignore people with no days and respect min length', () => {
@@ -51,4 +51,43 @@ test('window validation', () => {
   assert.equal(validateWindow('x', '2026-01-05', '2026-01-02'), 'End date is before the start.');
   assert.equal(validateWindow('x', '2026-01-01', '2026-03-31'), null);
   assert.equal(validateWindow('x', '2026-01-01', '2026-04-01'), 'Keep the window to 90 days or less.');
+});
+
+import { activitySince, bestPlace, freeForPlan, heatOf, icsFor, type Dest, type TripData } from './trip-derive.ts';
+
+const dest = (id: string, approvals: string[], extra: Partial<Dest> = {}): Dest => ({
+  id, name: id, note: null, addedBy: 'A', createdAt: '2026-01-01T00:00:00.000Z', pitchText: '', pitchSource: null,
+  pitchUpdatedBy: null, pitchUpdatedAt: null, approvals, reactions: {}, comments: [], ...extra,
+});
+
+test('best place skips vetoed', () => {
+  const people = [{ ...person('A', []), veto: 'top' }, person('B', [])];
+  assert.equal(bestPlace({ people, dests: [dest('top', ['A', 'B']), dest('next', ['A'])] })?.id, 'next');
+});
+
+test('free for plan counts people free every locked day', () => {
+  const h = heatOf({ people: [person('A', ['2026-11-02', '2026-11-03']), person('B', ['2026-11-02'])] });
+  assert.equal(freeForPlan(h, { start: '2026-11-02', end: '2026-11-03' }), 1);
+});
+
+test('ics is an all-day event with exclusive end', () => {
+  const ics = icsFor({ tripId: 't1', name: 'Trip, yay', place: 'Tahoe', start: '2026-11-13', end: '2026-11-15', url: 'https://x/t/t1' });
+  assert.match(ics, /DTSTART;VALUE=DATE:20261113\r\n/);
+  assert.match(ics, /DTEND;VALUE=DATE:20261116\r\n/);
+  assert.match(ics, /SUMMARY:Trip\\, yay: Tahoe/);
+});
+
+test('activity lists others since last visit, not mine', () => {
+  const since = '2026-02-01T00:00:00.000Z';
+  const later = '2026-02-02T00:00:00.000Z';
+  const trip: TripData = {
+    id: 't', name: 't', start: '2026-11-01', end: '2026-11-30', plan: { start: null, end: null, destId: 'x', by: 'B', at: later },
+    people: [{ ...person('A', []), joinedAt: '2026-01-01T00:00:00.000Z' }, { ...person('B', []), joinedAt: later }],
+    dests: [
+      dest('mine', [], { addedBy: 'A', createdAt: later }),
+      dest('x', [], { addedBy: 'B', createdAt: later, comments: [{ id: 'c', by: 'B', text: '?', isQuestion: true, answered: false, source: null, createdAt: later }] }),
+    ],
+  };
+  const texts = activitySince(trip, since, 'A').map((i) => i.text).sort();
+  assert.deepEqual(texts, ['1 new question on x', 'B added x', 'B joined', 'B locked in the plan']);
 });

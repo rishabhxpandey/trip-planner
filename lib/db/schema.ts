@@ -22,9 +22,21 @@ export const trips = pgTable(
     windowStart: date('window_start', { mode: 'string' }).notNull(),
     windowEnd: date('window_end', { mode: 'string' }).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    // "Lock it in": the group's decision. Dates and place can each be locked on their own.
+    lockedStart: date('locked_start', { mode: 'string' }),
+    lockedEnd: date('locked_end', { mode: 'string' }),
+    lockedDestinationId: uuid('locked_destination_id').references((): AnyPgColumn => destinations.id, {
+      onDelete: 'set null',
+    }),
+    lockedBy: uuid('locked_by').references((): AnyPgColumn => participants.id, { onDelete: 'set null' }),
+    lockedAt: timestamp('locked_at', { withTimezone: true }),
   },
   (t) => [
     check('trips_window_check', sql`${t.windowEnd} >= ${t.windowStart} AND ${t.windowEnd} - ${t.windowStart} <= 89`),
+    check(
+      'trips_locked_dates_check',
+      sql`(${t.lockedStart} IS NULL) = (${t.lockedEnd} IS NULL) AND (${t.lockedEnd} IS NULL OR ${t.lockedEnd} >= ${t.lockedStart})`,
+    ),
   ],
 );
 
@@ -91,6 +103,8 @@ export const participants = pgTable(
       onDelete: 'set null',
     }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    // Set when someone leaves. The row stays so their comments and pitches keep an author and the name can be rejoined.
+    leftAt: timestamp('left_at', { withTimezone: true }),
   },
   (t) => [
     uniqueIndex('participants_trip_name_idx').on(t.tripId, sql`lower(${t.name})`),

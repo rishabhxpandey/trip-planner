@@ -32,6 +32,7 @@ export async function withAgent(token: string, fn: (agent: Agent) => Promise<Res
   try {
     const [agent] = await db.select().from(participants).where(eq(participants.agentToken, token)).limit(1);
     if (!agent) return json({ error: 'Unknown agent link. It may have been regenerated.' }, 404);
+    if (agent.leftAt) return json({ error: `${agent.name} left this trip, so this link no longer works.` }, 404);
     return await fn(agent);
   } catch (e) {
     console.error(e);
@@ -80,6 +81,14 @@ export async function snapshotFor(agent: Agent) {
   const r = rangesOf(trip, MIN_RANGE_DAYS);
   return {
     trip: { name: trip.name, window_start: trip.start, window_end: trip.end },
+    plan: trip.plan
+      ? {
+          start: trip.plan.start,
+          end: trip.plan.end,
+          place: trip.dests.find((d) => d.id === trip.plan!.destId)?.name ?? null,
+          place_id: trip.plan.destId,
+        }
+      : null,
     you: { name: agent.name },
     people: trip.people.map((p) => ({ name: p.name, marked_days: p.days.length })),
     best_ranges: r.ranges.map((g) => ({

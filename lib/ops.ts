@@ -1,5 +1,5 @@
 // Optimistic updates: applied locally while the server action runs, then replaced by fresh server data.
-import type { Comment, Dest, TripData } from './trip-derive';
+import type { Comment, Dest, Plan, TripData } from './trip-derive';
 
 export type Op =
   | { t: 'day'; pid: string; day: string; on: boolean }
@@ -12,7 +12,10 @@ export type Op =
   | { t: 'pitch'; pid: string; did: string; text: string; source?: string | null }
   | { t: 'react'; pid: string; did: string; emoji: string; on: boolean }
   | { t: 'comment'; did: string; comment: Comment }
-  | { t: 'answer'; cid: string };
+  | { t: 'answer'; cid: string }
+  | { t: 'leave'; pid: string }
+  | { t: 'plan'; plan: Plan | null }
+  | { t: 'editTrip'; name: string; start: string; end: string };
 
 const mapDest = (trip: TripData, did: string, fn: (d: Dest) => Dest): TripData => ({
   ...trip,
@@ -46,6 +49,8 @@ export function applyOp(trip: TripData, op: Op): TripData {
     case 'remove':
       return {
         ...trip,
+        plan:
+          trip.plan?.destId === op.did ? (trip.plan.start ? { ...trip.plan, destId: null } : null) : trip.plan,
         dests: trip.dests.filter((d) => d.id !== op.did),
         people: trip.people.map((p) => (p.veto === op.did ? { ...p, veto: null } : p)),
       };
@@ -70,6 +75,26 @@ export function applyOp(trip: TripData, op: Op): TripData {
       });
     case 'comment':
       return mapDest(trip, op.did, (d) => ({ ...d, comments: [...d.comments, op.comment] }));
+    case 'plan':
+      return { ...trip, plan: op.plan };
+    case 'editTrip':
+      return {
+        ...trip,
+        name: op.name,
+        start: op.start,
+        end: op.end,
+        people: trip.people.map((p) => ({ ...p, days: p.days.filter((d) => d >= op.start && d <= op.end) })),
+      };
+    case 'leave':
+      return {
+        ...trip,
+        people: trip.people.filter((p) => p.id !== op.pid),
+        dests: trip.dests.map((d) => ({
+          ...d,
+          approvals: d.approvals.filter((a) => a !== op.pid),
+          reactions: Object.fromEntries(Object.entries(d.reactions).map(([e, ids]) => [e, ids.filter((x) => x !== op.pid)])),
+        })),
+      };
     case 'answer':
       return {
         ...trip,

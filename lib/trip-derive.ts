@@ -7,6 +7,7 @@ export type Person = {
   locked: boolean;
   veto: string | null;
   days: string[];
+  joinedAt: string;
 };
 
 export type Comment = {
@@ -34,6 +35,15 @@ export type Dest = {
   comments: Comment[];
 };
 
+/** The group's decision ("Lock it in"). Dates and place can each be set on their own. */
+export type Plan = {
+  start: string | null;
+  end: string | null;
+  destId: string | null;
+  by: string | null;
+  at: string;
+};
+
 export type TripData = {
   id: string;
   name: string;
@@ -41,6 +51,7 @@ export type TripData = {
   end: string;
   people: Person[];
   dests: Dest[];
+  plan: Plan | null;
 };
 
 export const HUES = [35, 165, 255, 330, 95, 210, 10, 290];
@@ -333,4 +344,83 @@ export function apiDetails(agentUrl: string, destId: string): string {
     '/places\n  { "name": "...", "note": "...", "pitch": {…} }\n\nPOST ' + agentUrl + '/places/' + destId +
     '/comments\n  { "text": "...", "question": false }'
   );
+}
+
+/* ---------- Plan ("Lock it in") ---------- */
+
+export const planDateLabel = (plan: Pick<Plan, 'start' | 'end'>) =>
+  plan.start && plan.end ? rangeLabel(dayList(plan.start, plan.end)) : '';
+
+/** How many active people are free on every locked day. */
+export function freeForPlan(heat: Heat, plan: Pick<Plan, 'start' | 'end'>): number {
+  if (!plan.start || !plan.end) return 0;
+  const days = dayList(plan.start, plan.end);
+  return heat.active.filter((p) => days.every((d) => heat.free[d]?.includes(p.id))).length;
+}
+
+/** Top-ranked place nobody vetoed (falls back to the top place). */
+export function bestPlace(trip: Pick<TripData, 'people' | 'dests'>): Dest | null {
+  const ranked = rankDests(trip.dests);
+  return ranked.find((d) => !trip.people.some((p) => p.veto === d.id)) ?? ranked[0] ?? null;
+}
+
+/** All-day calendar event (DTEND is exclusive). */
+export function icsFor(opts: { tripId: string; name: string; place: string | null; start: string; end: string; url: string }): string {
+  const ymd = (d: string) => d.replace(/-/g, '');
+  const endEx = fmtDay(parseDay(opts.end) + DAY);
+  const esc = (s: string) => s.replace(/\\/g, '\\\\').replace(/[,;]/g, (m) => '\\' + m).replace(/\n/g, '\\n');
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  const title = opts.place ? `${opts.name}: ${opts.place}` : opts.name;
+  return [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Outward//Trip planner//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    `UID:${opts.tripId}-${ymd(opts.start)}@outward`,
+    `DTSTAMP:${stamp}`,
+    `DTSTART;VALUE=DATE:${ymd(opts.start)}`,
+    `DTEND;VALUE=DATE:${ymd(endEx)}`,
+    `SUMMARY:${esc(title)}`,
+    ...(opts.place ? [`LOCATION:${esc(opts.place)}`] : []),
+    `DESCRIPTION:${esc('Planned on Outward: ' + opts.url)}`,
+    `URL:${opts.url}`,
+    'END:VEVENT',
+    'END:VCALENDAR',
+    '',
+  ].join('\r\n');
+}
+
+/* ---------- Activity ("What's new since you were here") ---------- */
+
+export type ActivityItem = { at: string; text: string };
+
+/** Things other people did after `since`, newest first. */
+export function activitySince(trip: TripData, since: string, meId: string | null): ActivityItem[] {
+  const t0 = Date.parse(since);
+  const after = (iso: string | null | undefined) => !!iso && Date.parse(iso) > t0;
+  const name = (id: string | null) => trip.people.find((p) => p.id === id)?.name ?? 'Someone';
+  const out: ActivityItem[] = [];
+  for (const p of trip.people) if (p.id !== meId && after(p.joinedAt)) out.push({ at: p.joinedAt, text: `${p.name} joined` });
+  for (const d of trip.dests) {
+    if (d.addedBy !== meId && after(d.createdAt)) out.push({ at: d.createdAt, text: `${name(d.addedBy)} added ${d.name}` });
+    if (d.pitchText.trim() && d.pitchUpdatedBy !== meId && after(d.pitchUpdatedAt) && d.pitchUpdatedAt !== d.createdAt)
+      out.push({ at: d.pitchUpdatedAt!, text: `${d.pitchSource ?? name(d.pitchUpdatedBy)} pitched ${d.name}` });
+    const qs = d.comments.filter((c) => c.by !== meId && after(c.createdAt));
+    const nq = qs.filter((c) => c.isQuestion).length;
+    const nc = qs.length - nq;
+    const last = qs.reduce((m, c) => (c.createdAt > m ? c.createdAt : m), '');
+    if (nq) out.push({ at: last, text: `${nq} new ${nq === 1 ? 'question' : 'questions'} on ${d.name}` });
+    if (nc) out.push({ at: last, text: `${nc} new ${nc === 1 ? 'comment' : 'comments'} on ${d.name}` });
+  }
+  if (trip.plan && trip.plan.by !== meId && after(trip.plan.at)) out.push({ at: trip.plan.at, text: `${name(trip.plan.by)} locked in the plan` });
+  return out.sort((a, b) => b.at.localeCompare(a.at));
+}
+
+/** One-line summary of a locked plan, e.g. "Lake Tahoe · Fri, Nov 13 – Sun, Nov 15". */
+export function planSummary(trip: Pick<TripData, 'plan' | 'dests'>): string {
+  if (!trip.plan) return '';
+  const place = trip.dests.find((d) => d.id === trip.plan!.destId)?.name;
+  return [place, planDateLabel(trip.plan)].filter(Boolean).join(' · ');
 }

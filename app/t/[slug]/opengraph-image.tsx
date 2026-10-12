@@ -2,7 +2,7 @@ import { ImageResponse } from 'next/og';
 import { MIN_RANGE_DAYS } from '@/lib/config';
 import { LogoRow, OG_SIZE, googleFont, oklchToHex } from '@/lib/og';
 import { loadTrip } from '@/lib/trip-data';
-import { initialOf, peopleLabel, rangeLabel, rangesOf, windowLabel } from '@/lib/trip-derive';
+import { initialOf, peopleLabel, planSummary, rangeLabel, rangesOf, windowLabel } from '@/lib/trip-derive';
 
 export const alt = 'Trip on Outward';
 export const size = OG_SIZE;
@@ -15,7 +15,8 @@ export default async function Image({ params }: { params: Promise<{ slug: string
   const when = trip ? windowLabel(trip.start, trip.end, trip.people.length).split(' · ')[0] : 'Plan the trip, not the group chat.';
   const people = trip?.people ?? [];
   const r = trip ? rangesOf(trip, MIN_RANGE_DAYS) : null;
-  const best = r?.kind === 'everyone' ? `Everyone's free ${rangeLabel(r.ranges[0].days)}` : null;
+  const locked = trip ? planSummary(trip) : '';
+  const best = locked ? `Locked in: ${locked}` : r?.kind === 'everyone' ? `Everyone's free ${rangeLabel(r.ranges[0].days)}` : null;
   const planning = `${peopleLabel(people.length)} planning`;
   const shown = people.slice(0, 8);
   const initials = shown.map((p) => initialOf(p.name)).join('');
@@ -77,7 +78,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
             <div
               style={{
                 display: 'flex',
-                background: '#C2491C',
+                background: locked ? '#1D2326' : '#C2491C',
                 color: '#FFFCF5',
                 borderRadius: 40,
                 padding: '16px 28px',

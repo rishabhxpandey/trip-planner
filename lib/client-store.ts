@@ -61,3 +61,6 @@ export async function copyText(text: string) {
     }
   }
 }
+
+export const lastSeen = (slug: string) => get(`outward:seen:${slug}`);
+export const setLastSeen = (slug: string, iso: string) => set(`outward:seen:${slug}`, iso);
