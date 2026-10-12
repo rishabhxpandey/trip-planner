@@ -291,6 +291,8 @@ export type DestSnapshot = {
     createdAt: string;
   }[];
   vetoers: string[];
+  /** The trip's locked-in plan pointed at this place. */
+  wasLocked?: boolean;
 };
 
 export async function removeDestination(participantId: string, destId: string): Promise<Result<{ snapshot: DestSnapshot }>> {
@@ -303,8 +305,13 @@ export async function removeDestination(participantId: string, destId: string): 
       db.select().from(comments).where(eq(comments.destinationId, destId)),
       db.select({ id: participants.id }).from(participants).where(eq(participants.vetoDestinationId, destId)),
     ]);
-    // FK ON DELETE SET NULL clears vetoes on it; cascades take approvals, reactions, comments.
+    const [trip] = await db.select({ locked: trips.lockedDestinationId, start: trips.lockedStart }).from(trips).where(eq(trips.id, p.tripId));
+    const wasLocked = trip?.locked === destId;
+    // FK ON DELETE SET NULL clears vetoes and the plan's place; cascades take approvals, reactions, comments.
     await db.delete(destinations).where(eq(destinations.id, destId));
+    // A plan that was only this place is gone entirely.
+    if (wasLocked && !trip.start)
+      await db.update(trips).set({ lockedBy: null, lockedAt: null }).where(eq(trips.id, p.tripId));
     refresh(p.tripId);
     const iso = (x: Date | null) => (x ? new Date(x).toISOString() : null);
     return {
@@ -333,6 +340,7 @@ export async function removeDestination(participantId: string, destId: string): 
           createdAt: iso(c.createdAt)!,
         })),
         vetoers: vt.map((v) => v.id),
+        wasLocked,
       },
     };
   });
@@ -395,6 +403,14 @@ export async function restoreDestination(participantId: string, snap: DestSnapsh
         .update(participants)
         .set({ vetoDestinationId: s.id })
         .where(and(inArray(participants.id, vt), isNull(participants.vetoDestinationId)));
+    if (snap.wasLocked) {
+      const [t] = await db.select().from(trips).where(eq(trips.id, p.tripId));
+      if (t && !t.lockedDestinationId)
+        await db
+          .update(trips)
+          .set({ lockedDestinationId: s.id, ...(t.lockedAt ? {} : { lockedBy: p.id, lockedAt: new Date() }) })
+          .where(eq(trips.id, p.tripId));
+    }
     refresh(p.tripId);
     return { ok: true };
   });
@@ -472,6 +488,81 @@ export async function markAnswered(participantId: string, commentId: string): Pr
     if (!c) return fail('That comment is gone.');
     await destIn(p.tripId, c.destinationId);
     await db.update(comments).set({ answered: true }).where(eq(comments.id, commentId));
+    refresh(p.tripId);
+    return { ok: true };
+  });
+}
+
+/* ---------- Trip settings and plan ---------- */
+
+/** Rename the trip or change its date window. Anyone in the trip can; the UI offers undo. */
+export async function editTrip(
+  participantId: string,
+  input: { name: string; start: string; end: string },
+): Promise<Result> {
+  return guard(async () => {
+    const p = await actor(participantId);
+    const name = String(input?.name ?? '').trim().slice(0, 80);
+    const start = String(input?.start ?? '');
+    const end = String(input?.end ?? '');
+    const err = validateWindow(name, start, end);
+    if (err) return fail(err);
+    if (!DAY_RE.test(start) || !DAY_RE.test(end)) return fail('Pick a start and end date.');
+    await db.update(trips).set({ name, windowStart: start, windowEnd: end }).where(eq(trips.id, p.tripId));
+    refresh(p.tripId);
+    return { ok: true };
+  });
+}
+
+export type PlanInput = { start: string | null; end: string | null; destId: string | null };
+
+/**
+ * Lock in (or change, or clear with null) the group's plan.
+ * `restore` puts back an earlier plan exactly, for undo.
+ */
+export async function setPlan(
+  participantId: string,
+  plan: PlanInput | null,
+  restore?: { by: string | null; at: string },
+): Promise<Result> {
+  return guard(async () => {
+    const p = await actor(participantId);
+    if (!plan) {
+      await db
+        .update(trips)
+        .set({ lockedStart: null, lockedEnd: null, lockedDestinationId: null, lockedBy: null, lockedAt: null })
+        .where(eq(trips.id, p.tripId));
+      refresh(p.tripId);
+      return { ok: true };
+    }
+    const start = plan.start ? String(plan.start) : null;
+    const end = plan.end ? String(plan.end) : start;
+    if (!start && !plan.destId) return fail('Pick dates, a place, or both.');
+    if (start && end) {
+      if (!DAY_RE.test(start) || !DAY_RE.test(end)) return fail('Pick valid dates.');
+      if (end < start) return fail('End date is before the start.');
+      const win = await windowOf(p.tripId);
+      if (!win.has(start) || !win.has(end)) return fail('Those dates are outside the trip window.');
+    }
+    if (plan.destId) await destIn(p.tripId, plan.destId);
+    let by: string | null = p.id;
+    let at = new Date();
+    if (restore) {
+      const [ok] = restore.by
+        ? await db
+            .select({ id: participants.id })
+            .from(participants)
+            .where(and(eq(participants.id, restore.by), eq(participants.tripId, p.tripId)))
+            .limit(1)
+        : [];
+      by = ok ? ok.id : null;
+      const t = new Date(restore.at);
+      if (!Number.isNaN(t.getTime())) at = t;
+    }
+    await db
+      .update(trips)
+      .set({ lockedStart: start, lockedEnd: start ? end : null, lockedDestinationId: plan.destId || null, lockedBy: by, lockedAt: at })
+      .where(eq(trips.id, p.tripId));
     refresh(p.tripId);
     return { ok: true };
   });

@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
+import { and, asc, between, eq, inArray, isNull } from 'drizzle-orm';
 import { cache } from 'react';
 import { db } from '@/lib/db';
 import { approvals, availability, comments, destinations, participants, reactions, trips } from '@/lib/db/schema';
@@ -26,7 +26,8 @@ export const loadTrip = cache(async (slug: string): Promise<LoadedTrip | null> =
       .select({ pid: availability.participantId, day: availability.day })
       .from(availability)
       .innerJoin(participants, eq(participants.id, availability.participantId))
-      .where(eq(participants.tripId, slug))
+      // Days outside the window are kept (so a window change can be undone) but not shown.
+      .where(and(eq(participants.tripId, slug), between(availability.day, trip.windowStart, trip.windowEnd)))
       .orderBy(asc(availability.day)),
     db.select().from(destinations).where(eq(destinations.tripId, slug)).orderBy(asc(destinations.createdAt)),
     db
@@ -58,6 +59,7 @@ export const loadTrip = cache(async (slug: string): Promise<LoadedTrip | null> =
     locked: !!p.userId,
     veto: p.vetoDestinationId,
     days: days[p.id] ?? [],
+    joinedAt: iso(p.createdAt)!,
   }));
 
   const destList: Dest[] = dests.map((d) => ({
@@ -96,6 +98,16 @@ export const loadTrip = cache(async (slug: string): Promise<LoadedTrip | null> =
     end: trip.windowEnd,
     people,
     dests: destList,
+    plan:
+      trip.lockedAt && (trip.lockedStart || trip.lockedDestinationId)
+        ? {
+            start: trip.lockedStart,
+            end: trip.lockedEnd,
+            destId: trip.lockedDestinationId,
+            by: trip.lockedBy,
+            at: iso(trip.lockedAt)!,
+          }
+        : null,
     owners: Object.fromEntries(ppl.map((p) => [p.id, p.userId])),
   };
 });

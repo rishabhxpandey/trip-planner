@@ -5,7 +5,10 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { copyText } from '@/lib/client-store';
 import { personColor, windowLabel } from '@/lib/trip-derive';
+import { ActivityStrip } from './ActivityStrip';
 import { DatesTab } from './DatesTab';
+import { EditTripSheet } from './EditTripSheet';
+import { PlanCard } from './Plan';
 import { useToast } from './toast';
 import { useTrip } from './TripProvider';
 import { LockIcon, LogoMark } from './ui';
@@ -14,7 +17,8 @@ import { WhereTab } from './WhereTab';
 type Tab = 'dates' | 'where';
 
 export function TripHub({ initialTab }: { initialTab: Tab }) {
-  const { trip, me, meId, openSheet, setSel } = useTrip();
+  const { trip, me, meId, openSheet, setSel, needMe } = useTrip();
+  const [editing, setEditing] = useState(false);
   const toast = useToast();
   const [tab, setTabState] = useState<Tab>(initialTab);
 
@@ -59,7 +63,18 @@ export function TripHub({ initialTab }: { initialTab: Tab }) {
         </div>
         <div className="flex flex-col gap-1.5">
           <h1 className="display m-0 text-[34px] leading-[1.02] font-extrabold tracking-[-0.03em] text-balance">{trip.name}</h1>
-          <span className="text-[15px] text-muted">{windowLabel(trip.start, trip.end, trip.people.length)}</span>
+          <span className="text-[15px] text-muted">
+            {windowLabel(trip.start, trip.end, trip.people.length)} ·{' '}
+            <button
+              onClick={() => {
+                if (needMe()) return;
+                setEditing(true);
+              }}
+              className="p-0 text-[15px] text-muted underline underline-offset-[3px]"
+            >
+              Edit
+            </button>
+          </span>
         </div>
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center pl-1.5">
@@ -88,6 +103,8 @@ export function TripHub({ initialTab }: { initialTab: Tab }) {
             </button>
           )}
         </div>
+        <ActivityStrip />
+        <PlanCard />
       </div>
 
       <div className="sticky top-0 z-[5] bg-page px-5 pt-3.5 pb-3">
@@ -107,6 +124,7 @@ export function TripHub({ initialTab }: { initialTab: Tab }) {
       </div>
 
       {tab === 'dates' ? <DatesTab /> : <WhereTab />}
+      {editing && <EditTripSheet onClose={() => setEditing(false)} />}
     </div>
   );
 }
