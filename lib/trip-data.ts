@@ -1,4 +1,4 @@
-import { asc, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
 import { cache } from 'react';
 import { db } from '@/lib/db';
 import { approvals, availability, comments, destinations, participants, reactions, trips } from '@/lib/db/schema';
@@ -17,7 +17,11 @@ export const loadTrip = cache(async (slug: string): Promise<LoadedTrip | null> =
   if (!trip) return null;
 
   const [ppl, avail, dests, appr, rx, cmts] = await Promise.all([
-    db.select().from(participants).where(eq(participants.tripId, slug)).orderBy(asc(participants.createdAt)),
+    db
+      .select()
+      .from(participants)
+      .where(and(eq(participants.tripId, slug), isNull(participants.leftAt)))
+      .orderBy(asc(participants.createdAt)),
     db
       .select({ pid: availability.participantId, day: availability.day })
       .from(availability)
@@ -109,7 +113,10 @@ export async function tripSummaries(ids: string[]): Promise<TripSummary[]> {
   if (!clean.length) return [];
   const [ts, ps] = await Promise.all([
     db.select().from(trips).where(inArray(trips.id, clean)),
-    db.select({ tripId: participants.tripId }).from(participants).where(inArray(participants.tripId, clean)),
+    db
+      .select({ tripId: participants.tripId })
+      .from(participants)
+      .where(and(inArray(participants.tripId, clean), isNull(participants.leftAt))),
   ]);
   const count: Record<string, number> = {};
   for (const p of ps) count[p.tripId] = (count[p.tripId] ?? 0) + 1;
@@ -124,7 +131,7 @@ export async function userTripSummaries(userId: string): Promise<TripSummary[]> 
   const rows = await db
     .select({ tripId: participants.tripId, createdAt: participants.createdAt })
     .from(participants)
-    .where(eq(participants.userId, userId))
+    .where(and(eq(participants.userId, userId), isNull(participants.leftAt)))
     .orderBy(asc(participants.createdAt));
   return (await tripSummaries(rows.reverse().map((r) => r.tripId)));
 }

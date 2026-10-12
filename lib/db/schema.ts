@@ -91,6 +91,8 @@ export const participants = pgTable(
       onDelete: 'set null',
     }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    // Set when someone leaves. The row stays so their comments and pitches keep an author and the name can be rejoined.
+    leftAt: timestamp('left_at', { withTimezone: true }),
   },
   (t) => [
     uniqueIndex('participants_trip_name_idx').on(t.tripId, sql`lower(${t.name})`),

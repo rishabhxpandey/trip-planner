@@ -10,15 +10,19 @@ export function NameSheet({
   onClose,
   onPick,
   onJoin,
+  onLeave,
 }: {
   canClose: boolean;
   onClose: () => void;
   onPick: (p: Person) => void;
   onJoin: (name: string) => Promise<boolean>;
+  onLeave: () => void;
 }) {
   const { trip, meId, sessionPid, googleEnabled, signedInEmail, startGoogle } = useTrip();
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
+  const [confirmLeave, setConfirmLeave] = useState(false);
+  const me = trip.people.find((p) => p.id === meId);
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -122,6 +126,39 @@ export function NameSheet({
             Cancel
           </button>
         )}
+
+        {me &&
+          (confirmLeave ? (
+            <div className="flex flex-col gap-2.5 rounded-[14px] border border-veto-line bg-veto-bg/50 p-3.5">
+              <span className="text-sm leading-[1.4] text-veto-fg">
+                Leave {trip.name}? Your marked days, thumbs, veto and reactions are removed. Your comments and pitches stay.
+              </span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setConfirmLeave(false);
+                    onLeave();
+                  }}
+                  className="h-11 flex-1 rounded-xl bg-danger text-[15px] font-bold text-surface"
+                >
+                  Leave trip
+                </button>
+                <button
+                  onClick={() => setConfirmLeave(false)}
+                  className="h-11 rounded-xl border border-field bg-white px-4 text-[15px] font-semibold text-ink"
+                >
+                  Stay
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setConfirmLeave(true)}
+              className="h-11 self-center text-sm font-semibold text-danger underline underline-offset-[3px]"
+            >
+              Leave this trip
+            </button>
+          ))}
       </div>
     </div>
   );

@@ -32,6 +32,7 @@ export async function withAgent(token: string, fn: (agent: Agent) => Promise<Res
   try {
     const [agent] = await db.select().from(participants).where(eq(participants.agentToken, token)).limit(1);
     if (!agent) return json({ error: 'Unknown agent link. It may have been regenerated.' }, 404);
+    if (agent.leftAt) return json({ error: `${agent.name} left this trip, so this link no longer works.` }, 404);
     return await fn(agent);
   } catch (e) {
     console.error(e);

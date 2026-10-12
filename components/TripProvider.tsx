@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { createContext, startTransition, useCallback, useContext, useEffect, useMemo, useOptimistic, useRef, useState } from 'react';
-import { claimParticipant, googleSignIn, joinTrip, linkGoogle, type Result } from '@/lib/actions';
+import { claimParticipant, googleSignIn, joinTrip, leaveTrip, linkGoogle, rejoinTrip, type Result } from '@/lib/actions';
 import { getMe, inAppBrowser, recordTrip, setMeStored } from '@/lib/client-store';
 import { MIN_RANGE_DAYS } from '@/lib/config';
 import { applyOp, type Op } from '@/lib/ops';
@@ -236,6 +236,24 @@ export function TripProvider({
     [trip, pick, chooseMe, toast, router],
   );
 
+  const leave = useCallback(async () => {
+    const pid = meId;
+    if (!pid) return;
+    const r = await run({ t: 'leave', pid }, () => leaveTrip(pid));
+    if (!r.ok) return;
+    setMeId(null);
+    setMeStored(trip.id, null);
+    setSel(null);
+    const snap = r.snapshot;
+    toast('You left the trip. Your days and votes were removed.', async () => {
+      const u = await rejoinTrip(pid, snap).catch(() => ({ ok: false as const, error: 'Network hiccup. Try again.' }));
+      if (!u.ok) return toast(u.error);
+      justJoined.current = pid;
+      chooseMe(pid);
+      router.refresh();
+    });
+  }, [meId, run, trip.id, toast, chooseMe, router]);
+
   const needMe = useCallback(() => {
     if (me) return false;
     setSheet(true);
@@ -279,6 +297,7 @@ export function TripProvider({
           onClose={() => setSheet(false)}
           onPick={pick}
           onJoin={join}
+          onLeave={leave}
         />
       )}
     </Ctx.Provider>

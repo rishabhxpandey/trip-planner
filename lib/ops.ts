@@ -12,7 +12,8 @@ export type Op =
   | { t: 'pitch'; pid: string; did: string; text: string; source?: string | null }
   | { t: 'react'; pid: string; did: string; emoji: string; on: boolean }
   | { t: 'comment'; did: string; comment: Comment }
-  | { t: 'answer'; cid: string };
+  | { t: 'answer'; cid: string }
+  | { t: 'leave'; pid: string };
 
 const mapDest = (trip: TripData, did: string, fn: (d: Dest) => Dest): TripData => ({
   ...trip,
@@ -70,6 +71,16 @@ export function applyOp(trip: TripData, op: Op): TripData {
       });
     case 'comment':
       return mapDest(trip, op.did, (d) => ({ ...d, comments: [...d.comments, op.comment] }));
+    case 'leave':
+      return {
+        ...trip,
+        people: trip.people.filter((p) => p.id !== op.pid),
+        dests: trip.dests.map((d) => ({
+          ...d,
+          approvals: d.approvals.filter((a) => a !== op.pid),
+          reactions: Object.fromEntries(Object.entries(d.reactions).map(([e, ids]) => [e, ids.filter((x) => x !== op.pid)])),
+        })),
+      };
     case 'answer':
       return {
         ...trip,
