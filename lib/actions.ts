@@ -6,7 +6,8 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { currentUser, googleEnabled, signIn, signOut } from '@/auth';
 import { db } from '@/lib/db';
-import { approvals, availability, comments, destinations, participants, reactions, trips } from '@/lib/db/schema';
+import { expenseError, type Expense } from '@/lib/costs';
+import { approvals, availability, comments, destinations, expenseShares, expenses, participants, reactions, trips } from '@/lib/db/schema';
 import { tripSummaries as loadSummaries, type TripSummary } from '@/lib/trip-data';
 import { EMOJI, HUES, dayList, validateWindow } from '@/lib/trip-derive';
 import { newAgentToken } from '@/lib/tokens';
@@ -563,6 +564,70 @@ export async function setPlan(
       .update(trips)
       .set({ lockedStart: start, lockedEnd: start ? end : null, lockedDestinationId: plan.destId || null, lockedBy: by, lockedAt: at })
       .where(eq(trips.id, p.tripId));
+    refresh(p.tripId);
+    return { ok: true };
+  });
+}
+
+/* ---------- Costs ---------- */
+
+export type ExpenseInput = Pick<Expense, 'id' | 'kind' | 'desc' | 'cents' | 'paidBy' | 'split' | 'day' | 'shares'> & {
+  /** Only when undoing a delete, to put it back where it was. */
+  createdAt?: string;
+};
+
+/** Add or edit an expense (or a payment). The id comes from the client so optimistic rows and undo line up. */
+export async function saveExpense(participantId: string, input: ExpenseInput): Promise<Result> {
+  return guard(async () => {
+    const p = await actor(participantId);
+    const id = String(input?.id ?? '');
+    if (!UUID_RE.test(id)) return fail('Something went wrong. Try again.');
+    const kind = input.kind === 'payment' ? 'payment' : 'expense';
+    const split = (['equal', 'nights', 'exact'] as const).find((m) => m === input.split) ?? 'equal';
+    const desc = String(input.desc ?? '').trim().replace(/\s+/g, ' ').slice(0, 80);
+    const cents = Number(input.cents);
+    const shares = (Array.isArray(input.shares) ? input.shares : []).map((x) => ({
+      pid: String(x?.pid ?? ''),
+      units: split === 'equal' ? 1 : Number(x?.units),
+    }));
+    const err = expenseError({ kind, desc, cents, split, shares });
+    if (err) return fail(err);
+    if (kind === 'payment' && (shares.length !== 1 || shares[0].pid === input.paidBy)) return fail('Pick who got paid.');
+
+    const people = new Set(
+      (await db.select({ id: participants.id }).from(participants).where(eq(participants.tripId, p.tripId))).map((x) => x.id),
+    );
+    const paidBy = String(input.paidBy ?? '');
+    if (!people.has(paidBy) || shares.some((x) => !people.has(x.pid))) return fail('Someone in that split isn’t in this trip.');
+    let day: string | null = null;
+    if (input.day) {
+      day = String(input.day);
+      if (!DAY_RE.test(day) || !(await windowOf(p.tripId)).has(day)) return fail('Pick a day inside the trip window.');
+    }
+
+    const [ex] = await db.select({ tripId: expenses.tripId }).from(expenses).where(eq(expenses.id, id)).limit(1);
+    if (ex && ex.tripId !== p.tripId) return fail('Something went wrong. Try again.');
+    const row = { kind, description: desc, amountCents: cents, paidBy, split, day, updatedAt: new Date() };
+    if (ex) {
+      await db.update(expenses).set(row).where(eq(expenses.id, id));
+      await db.delete(expenseShares).where(eq(expenseShares.expenseId, id));
+    } else {
+      const t = input.createdAt ? new Date(input.createdAt) : null;
+      const createdAt = t && !Number.isNaN(t.getTime()) ? t : new Date();
+      await db.insert(expenses).values({ id, tripId: p.tripId, createdBy: p.id, createdAt, ...row });
+    }
+    await db.insert(expenseShares).values(shares.map((x) => ({ expenseId: id, participantId: x.pid, units: x.units })));
+    refresh(p.tripId);
+    return { ok: true };
+  });
+}
+
+/** Delete an expense. The client keeps its copy and undoes with saveExpense. */
+export async function deleteExpense(participantId: string, expenseId: string): Promise<Result> {
+  return guard(async () => {
+    const p = await actor(participantId);
+    if (!UUID_RE.test(expenseId ?? '')) return fail('That expense is gone.');
+    await db.delete(expenses).where(and(eq(expenses.id, expenseId), eq(expenses.tripId, p.tripId)));
     refresh(p.tripId);
     return { ok: true };
   });
