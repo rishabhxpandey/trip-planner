@@ -3,6 +3,7 @@ import {
   boolean,
   check,
   date,
+  index,
   integer,
   pgTable,
   primaryKey,
@@ -189,3 +190,45 @@ export const comments = pgTable('comments', {
   source: text('source'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+// Shared costs. Amounts are integer cents. Each share's `units` is a weight (1, nights, or cents; see lib/costs.ts).
+export const expenses = pgTable(
+  'expenses',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tripId: text('trip_id')
+      .notNull()
+      .references(() => trips.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull().default('expense'),
+    description: text('description').notNull().default(''),
+    amountCents: integer('amount_cents').notNull(),
+    paidBy: uuid('paid_by')
+      .notNull()
+      .references(() => participants.id, { onDelete: 'cascade' }),
+    split: text('split').notNull().default('equal'),
+    day: date('day', { mode: 'string' }),
+    createdBy: uuid('created_by').references(() => participants.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('expenses_trip_idx').on(t.tripId),
+    check('expenses_amount_check', sql`${t.amountCents} > 0`),
+    check('expenses_kind_check', sql`${t.kind} IN ('expense', 'payment')`),
+    check('expenses_split_check', sql`${t.split} IN ('equal', 'nights', 'exact')`),
+  ],
+);
+
+export const expenseShares = pgTable(
+  'expense_shares',
+  {
+    expenseId: uuid('expense_id')
+      .notNull()
+      .references(() => expenses.id, { onDelete: 'cascade' }),
+    participantId: uuid('participant_id')
+      .notNull()
+      .references(() => participants.id, { onDelete: 'cascade' }),
+    units: integer('units').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.expenseId, t.participantId] }), check('expense_shares_units_check', sql`${t.units} > 0`)],
+);

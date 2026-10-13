@@ -1,7 +1,8 @@
 import { and, asc, between, eq, inArray, isNull } from 'drizzle-orm';
 import { cache } from 'react';
 import { db } from '@/lib/db';
-import { approvals, availability, comments, destinations, participants, reactions, trips } from '@/lib/db/schema';
+import { approvals, availability, comments, destinations, expenseShares, expenses, participants, reactions, trips } from '@/lib/db/schema';
+import type { Expense, FormerPerson, SplitMode } from '@/lib/costs';
 import type { Comment, Dest, Person, TripData } from '@/lib/trip-derive';
 
 const iso = (d: Date | string | null) => (d == null ? null : typeof d === 'string' ? new Date(d).toISOString() : d.toISOString());
@@ -16,12 +17,8 @@ export const loadTrip = cache(async (slug: string): Promise<LoadedTrip | null> =
   const [trip] = await db.select().from(trips).where(eq(trips.id, slug)).limit(1);
   if (!trip) return null;
 
-  const [ppl, avail, dests, appr, rx, cmts] = await Promise.all([
-    db
-      .select()
-      .from(participants)
-      .where(and(eq(participants.tripId, slug), isNull(participants.leftAt)))
-      .orderBy(asc(participants.createdAt)),
+  const [all, avail, dests, appr, rx, cmts, exps, shares] = await Promise.all([
+    db.select().from(participants).where(eq(participants.tripId, slug)).orderBy(asc(participants.createdAt)),
     db
       .select({ pid: availability.participantId, day: availability.day })
       .from(availability)
@@ -47,7 +44,16 @@ export const loadTrip = cache(async (slug: string): Promise<LoadedTrip | null> =
       .innerJoin(destinations, eq(destinations.id, comments.destinationId))
       .where(eq(destinations.tripId, slug))
       .orderBy(asc(comments.createdAt)),
+    db.select().from(expenses).where(eq(expenses.tripId, slug)).orderBy(asc(expenses.createdAt)),
+    db
+      .select({ eid: expenseShares.expenseId, pid: expenseShares.participantId, units: expenseShares.units })
+      .from(expenseShares)
+      .innerJoin(expenses, eq(expenses.id, expenseShares.expenseId))
+      .innerJoin(participants, eq(participants.id, expenseShares.participantId))
+      .where(eq(expenses.tripId, slug))
+      .orderBy(asc(participants.createdAt)),
   ]);
+  const ppl = all.filter((p) => !p.leftAt);
 
   const days: Record<string, string[]> = {};
   for (const a of avail) (days[a.pid] ??= []).push(a.day);
@@ -91,6 +97,25 @@ export const loadTrip = cache(async (slug: string): Promise<LoadedTrip | null> =
     byId.get(c.destinationId)!.comments.push(cm);
   }
 
+  const sharesOf: Record<string, Expense['shares']> = {};
+  for (const s of shares) (sharesOf[s.eid] ??= []).push({ pid: s.pid, units: s.units });
+  const expenseList: Expense[] = exps.map((e) => ({
+    id: e.id,
+    kind: e.kind as Expense['kind'],
+    desc: e.description,
+    cents: e.amountCents,
+    paidBy: e.paidBy,
+    split: e.split as SplitMode,
+    day: e.day,
+    shares: sharesOf[e.id] ?? [],
+    createdBy: e.createdBy,
+    createdAt: iso(e.createdAt)!,
+  }));
+  const inExpenses = new Set(expenseList.flatMap((e) => [e.paidBy, ...e.shares.map((s) => s.pid)]));
+  const former: FormerPerson[] = all
+    .filter((p) => p.leftAt && inExpenses.has(p.id))
+    .map((p) => ({ id: p.id, name: p.name, hue: p.hue }));
+
   return {
     id: trip.id,
     name: trip.name,
@@ -108,6 +133,8 @@ export const loadTrip = cache(async (slug: string): Promise<LoadedTrip | null> =
             at: iso(trip.lockedAt)!,
           }
         : null,
+    expenses: expenseList,
+    former,
     owners: Object.fromEntries(ppl.map((p) => [p.id, p.userId])),
   };
 });

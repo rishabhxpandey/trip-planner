@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { copyText } from '@/lib/client-store';
 import { personColor, windowLabel } from '@/lib/trip-derive';
 import { ActivityStrip } from './ActivityStrip';
+import { CostsTab } from './CostsTab';
 import { DatesTab } from './DatesTab';
 import { EditTripSheet } from './EditTripSheet';
 import { PlanCard } from './Plan';
@@ -14,7 +15,9 @@ import { useTrip } from './TripProvider';
 import { LockIcon, LogoMark } from './ui';
 import { WhereTab } from './WhereTab';
 
-type Tab = 'dates' | 'where';
+export type Tab = 'dates' | 'where' | 'costs';
+
+const TAB_LABEL: Record<Tab, string> = { dates: 'Dates', where: 'Where', costs: 'Costs' };
 
 export function TripHub({ initialTab }: { initialTab: Tab }) {
   const { trip, me, meId, openSheet, setSel, needMe } = useTrip();
@@ -24,7 +27,7 @@ export function TripHub({ initialTab }: { initialTab: Tab }) {
 
   const setTab = (t: Tab) => {
     setTabState(t);
-    if (t === 'where') setSel(null);
+    if (t !== 'dates') setSel(null);
     const url = new URL(window.location.href);
     if (t === 'dates') url.searchParams.delete('tab');
     else url.searchParams.set('tab', t);
@@ -108,8 +111,8 @@ export function TripHub({ initialTab }: { initialTab: Tab }) {
       </div>
 
       <div className="sticky top-0 z-[5] bg-page px-5 pt-3.5 pb-3">
-        <div className="grid grid-cols-2 gap-1 rounded-[14px] bg-track p-1" role="tablist">
-          {(['dates', 'where'] as const).map((t) => (
+        <div className="grid grid-cols-3 gap-1 rounded-[14px] bg-track p-1" role="tablist">
+          {(['dates', 'where', 'costs'] as const).map((t) => (
             <button
               key={t}
               role="tab"
@@ -117,13 +120,13 @@ export function TripHub({ initialTab }: { initialTab: Tab }) {
               onClick={() => setTab(t)}
               className={`h-11 rounded-[11px] text-[15px] font-bold text-ink ${tab === t ? 'bg-surface shadow-tab' : 'bg-transparent'}`}
             >
-              {t === 'dates' ? 'Dates' : 'Where'}
+              {TAB_LABEL[t]}
             </button>
           ))}
         </div>
       </div>
 
-      {tab === 'dates' ? <DatesTab /> : <WhereTab />}
+      {tab === 'dates' ? <DatesTab /> : tab === 'where' ? <WhereTab /> : <CostsTab />}
       {editing && <EditTripSheet onClose={() => setEditing(false)} />}
     </div>
   );

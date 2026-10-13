@@ -1,4 +1,6 @@
-// Pure derived-data helpers shared by server and client. No imports, so it also runs under `node --test`.
+// Pure derived-data helpers shared by server and client. Type-only imports, so it also runs under `node --test`.
+
+import type { Expense, FormerPerson } from './costs';
 
 export type Person = {
   id: string;
@@ -52,6 +54,9 @@ export type TripData = {
   people: Person[];
   dests: Dest[];
   plan: Plan | null;
+  expenses: Expense[];
+  /** People who left but still appear in expenses, so balances keep their names. */
+  former: FormerPerson[];
 };
 
 export const HUES = [35, 165, 255, 330, 95, 210, 10, 290];
@@ -415,6 +420,13 @@ export function activitySince(trip: TripData, since: string, meId: string | null
     if (nc) out.push({ at: last, text: `${nc} new ${nc === 1 ? 'comment' : 'comments'} on ${d.name}` });
   }
   if (trip.plan && trip.plan.by !== meId && after(trip.plan.at)) out.push({ at: trip.plan.at, text: `${name(trip.plan.by)} locked in the plan` });
+  const spent = trip.expenses.filter((e) => e.kind === 'expense' && e.createdBy !== meId && after(e.createdAt));
+  const adders = new Map<string | null, typeof spent>();
+  for (const e of spent) adders.set(e.createdBy, [...(adders.get(e.createdBy) ?? []), e]);
+  for (const [by, es] of adders) {
+    const last = es.reduce((m, e) => (e.createdAt > m ? e.createdAt : m), '');
+    out.push({ at: last, text: es.length === 1 ? `${name(by)} added ${es[0].desc}` : `${name(by)} added ${es.length} expenses` });
+  }
   return out.sort((a, b) => b.at.localeCompare(a.at));
 }
 
