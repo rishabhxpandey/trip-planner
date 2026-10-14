@@ -92,7 +92,8 @@ test('activity lists others since last visit, not mine', () => {
       { id: 'e2', kind: 'expense', desc: 'Gas', cents: 3000, paidBy: 'A', split: 'equal', day: null, shares: [{ pid: 'A', units: 1 }], createdBy: 'A', createdAt: later },
     ],
     former: [],
+    files: [{ id: 'f1', name: 'Itinerary.pdf', type: 'application/pdf', size: 10, by: 'B', createdAt: later }],
   };
   const texts = activitySince(trip, since, 'A').map((i) => i.text).sort();
-  assert.deepEqual(texts, ['1 new question on x', 'B added Groceries', 'B added x', 'B joined', 'B locked in the plan']);
+  assert.deepEqual(texts, ['1 new question on x', 'B added Groceries', 'B added Itinerary.pdf', 'B added x', 'B joined', 'B locked in the plan']);
 });

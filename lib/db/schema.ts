@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import {
   boolean,
   check,
+  customType,
   date,
   index,
   integer,
@@ -231,4 +232,31 @@ export const expenseShares = pgTable(
     units: integer('units').notNull(),
   },
   (t) => [primaryKey({ columns: [t.expenseId, t.participantId] }), check('expense_shares_units_check', sql`${t.units} > 0`)],
+);
+
+const bytea = customType<{ data: Buffer; driverData: Buffer | string }>({
+  dataType: () => 'bytea',
+  toDriver: (v) => v,
+  // postgres-js returns a Buffer; Neon's HTTP driver returns hex ("\\x…").
+  fromDriver: (v) => (typeof v === 'string' ? Buffer.from(v.replace(/^\\x/, ''), 'hex') : Buffer.from(v)),
+});
+
+// Files people attach to a trip (an itinerary PDF, a booking confirmation, an HTML plan). Small, so they live in Postgres.
+export const tripFiles = pgTable(
+  'trip_files',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tripId: text('trip_id')
+      .notNull()
+      .references(() => trips.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    contentType: text('content_type').notNull(),
+    size: integer('size').notNull(),
+    data: bytea('data').notNull(),
+    uploadedBy: uuid('uploaded_by').references(() => participants.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    // Removing is a soft delete so it can be undone.
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
+  },
+  (t) => [index('trip_files_trip_idx').on(t.tripId), check('trip_files_size_check', sql`${t.size} > 0`)],
 );

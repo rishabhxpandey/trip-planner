@@ -1,5 +1,5 @@
-// Applies pending drizzle/*.sql migrations. Runs before `next build` on Vercel production deploys
-// (see "vercel-build" in package.json); preview deploys share the database, so they skip it.
+// Applies pending drizzle/*.sql migrations (`npm run db:migrate:deploy`). Meant to run before `next build` on Vercel production deploys,
+// but nothing wires it into the build yet. Preview deploys share the database, so they skip it.
 // Uses the same history table as `npm run db:migrate` (drizzle.__drizzle_migrations), so the two never double-apply.
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';

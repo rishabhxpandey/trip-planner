@@ -1,5 +1,6 @@
 // Optimistic updates: applied locally while the server action runs, then replaced by fresh server data.
 import type { Expense } from './costs';
+import type { TripFile } from './files';
 import type { Comment, Dest, Plan, TripData } from './trip-derive';
 
 export type Op =
@@ -18,7 +19,9 @@ export type Op =
   | { t: 'plan'; plan: Plan | null }
   | { t: 'editTrip'; name: string; start: string; end: string }
   | { t: 'expense'; expense: Expense }
-  | { t: 'removeExpense'; id: string };
+  | { t: 'removeExpense'; id: string }
+  | { t: 'removeFile'; id: string }
+  | { t: 'restoreFile'; file: TripFile };
 
 const mapDest = (trip: TripData, did: string, fn: (d: Dest) => Dest): TripData => ({
   ...trip,
@@ -107,6 +110,12 @@ export function applyOp(trip: TripData, op: Op): TripData {
       };
     case 'removeExpense':
       return { ...trip, expenses: trip.expenses.filter((e) => e.id !== op.id) };
+    case 'removeFile':
+      return { ...trip, files: trip.files.filter((f) => f.id !== op.id) };
+    case 'restoreFile':
+      return trip.files.some((f) => f.id === op.file.id)
+        ? trip
+        : { ...trip, files: [...trip.files, op.file].sort((a, b) => b.createdAt.localeCompare(a.createdAt)) };
     case 'answer':
       return {
         ...trip,

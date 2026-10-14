@@ -1,6 +1,7 @@
 // Pure derived-data helpers shared by server and client. Type-only imports, so it also runs under `node --test`.
 
 import type { Expense, FormerPerson } from './costs';
+import type { TripFile } from './files';
 
 export type Person = {
   id: string;
@@ -57,6 +58,7 @@ export type TripData = {
   expenses: Expense[];
   /** People who left but still appear in expenses, so balances keep their names. */
   former: FormerPerson[];
+  files: TripFile[];
 };
 
 export const HUES = [35, 165, 255, 330, 95, 210, 10, 290];
@@ -420,6 +422,8 @@ export function activitySince(trip: TripData, since: string, meId: string | null
     if (nc) out.push({ at: last, text: `${nc} new ${nc === 1 ? 'comment' : 'comments'} on ${d.name}` });
   }
   if (trip.plan && trip.plan.by !== meId && after(trip.plan.at)) out.push({ at: trip.plan.at, text: `${name(trip.plan.by)} locked in the plan` });
+  for (const f of trip.files)
+    if (f.by !== meId && after(f.createdAt)) out.push({ at: f.createdAt, text: `${name(f.by)} added ${f.name}` });
   const spent = trip.expenses.filter((e) => e.kind === 'expense' && e.createdBy !== meId && after(e.createdAt));
   const adders = new Map<string | null, typeof spent>();
   for (const e of spent) adders.set(e.createdBy, [...(adders.get(e.createdBy) ?? []), e]);
