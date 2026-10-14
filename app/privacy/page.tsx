@@ -5,7 +5,7 @@ export const metadata: Metadata = { title: 'Privacy · Outward', description: 'W
 
 export default function Privacy() {
   return (
-    <LegalPage title="Privacy" updated="October 11, 2026">
+    <LegalPage title="Privacy" updated="October 14, 2026">
       <p>Outward helps a group pick dates and a destination for a trip. It works without an account. This page explains what it stores.</p>
 
       <h2>What we store</h2>
@@ -24,6 +24,7 @@ export default function Privacy() {
       <h2>What we don&apos;t do</h2>
       <ul>
         <li>No ads, no tracking pixels, no selling or sharing data with third parties.</li>
+        <li>We count page views with Vercel Web Analytics, which uses no cookies and doesn&apos;t identify you. Trip links and other ids are removed before anything is counted, so it only sees things like &ldquo;a trip page was opened&rdquo;.</li>
         <li>We only use Google sign-in to identify you. We don&apos;t access your Gmail, contacts, calendar or anything else.</li>
       </ul>
 
