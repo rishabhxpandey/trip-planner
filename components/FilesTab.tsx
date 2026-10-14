@@ -1,6 +1,7 @@
 'use client';
 
 import { Download, File as FileIcon, FileCode, FileImage, FileSpreadsheet, FileText, Upload } from 'lucide-react';
+import Link from 'next/link';
 import { useRef, useState } from 'react';
 import { removeFile, uploadFile } from '@/lib/actions';
 import { MAX_FILE_BYTES, fileSize, kindOf, type TripFile } from '@/lib/files';
@@ -101,20 +102,16 @@ export function FilesTab() {
         <div className="flex flex-col divide-y divide-line overflow-hidden rounded-[16px] border border-line bg-surface">
           {trip.files.map((f) => {
             const href = `/t/${trip.id}/files/${f.id}`;
+            const view = `/t/${trip.id}/f/${f.id}`;
             return (
               <div key={f.id} className="flex items-center gap-3 px-3.5 py-3">
                 <Icon file={f} />
-                <a
-                  href={href}
-                  target="_blank"
-                  rel="noopener"
-                  className="flex min-w-0 flex-1 flex-col gap-0.5 text-ink no-underline hover:text-ink"
-                >
+                <Link href={view} className="flex min-w-0 flex-1 flex-col gap-0.5 text-ink no-underline hover:text-ink">
                   <span className="truncate text-[15px] font-bold">{f.name}</span>
                   <span className="truncate text-[13px] text-muted">
                     {kindOf(f)} · {fileSize(f.size)} · {nameOf(f.by)}, {monthDay(f.createdAt.slice(0, 10))}
                   </span>
-                </a>
+                </Link>
                 <a
                   href={`${href}?download=1`}
                   aria-label={`Download ${f.name}`}

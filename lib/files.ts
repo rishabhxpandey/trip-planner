@@ -93,3 +93,48 @@ export function disposition(name: string, inline: boolean): string {
   const ascii = name.replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '_');
   return `${inline ? 'inline' : 'attachment'}; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(name)}`;
 }
+
+export type Viewer = 'pdf' | 'image' | 'page' | 'csv' | 'docx' | 'none';
+
+/** How the in-app viewer shows a file. 'page' is a sandboxed frame (HTML, plain text); 'none' offers a download. */
+export function viewerOf(f: Pick<TripFile, 'name' | 'type'>): Viewer {
+  if (f.type === 'application/pdf') return 'pdf';
+  if (/^image\/(png|jpeg|gif|webp|svg\+xml)$/.test(f.type)) return 'image';
+  if (f.type === 'text/csv') return 'csv';
+  if (f.type === 'text/html' || f.type === 'text/plain' || f.type === 'text/markdown') return 'page';
+  if (f.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') return 'docx';
+  return 'none';
+}
+
+/** Minimal RFC 4180 CSV: quoted fields, doubled quotes, CRLF. Stops after `maxRows`. */
+export function parseCsv(text: string, maxRows = 500): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let cell = '';
+  let quoted = false;
+  for (let i = 0; i < text.length && rows.length < maxRows; i++) {
+    const c = text[i];
+    if (quoted) {
+      if (c === '"' && text[i + 1] === '"') {
+        cell += '"';
+        i++;
+      } else if (c === '"') quoted = false;
+      else cell += c;
+    } else if (c === '"' && !cell) quoted = true;
+    else if (c === ',') {
+      row.push(cell);
+      cell = '';
+    } else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i + 1] === '\n') i++;
+      row.push(cell);
+      rows.push(row);
+      row = [];
+      cell = '';
+    } else cell += c;
+  }
+  if ((cell || row.length) && rows.length < maxRows) rows.push([...row, cell]);
+  return rows;
+}
+
+/** Only links that can't run script survive in a rendered document. */
+export const safeHref = (href: string | null) => !!href && /^(https?:|mailto:|tel:|#)/i.test(href.trim());

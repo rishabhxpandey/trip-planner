@@ -34,7 +34,8 @@ Google sign-in turns on when `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` are set (re
 | `app/page.tsx` | Create trip + recent trips |
 | `app/t/[slug]/layout.tsx` | Loads the trip, resolves the Google-session participant, wraps `TripProvider` |
 | `app/t/[slug]/page.tsx` | Hub (Dates / Where / Costs / Files tabs) + `generateMetadata` |
-| `app/t/[slug]/files/[fileId]/route.ts` | Opens or downloads a trip file (`?download=1`) |
+| `app/t/[slug]/f/[fileId]/page.tsx` | In-app file viewer (PDF via pdf.js, Word via docx-preview, images, CSV table, sandboxed HTML) |
+| `app/t/[slug]/files/[fileId]/route.ts` | Raw file: opens or downloads (`?download=1`) |
 | `app/t/[slug]/p/[destId]/page.tsx` | Full-screen pitch |
 | `app/t/[slug]/opengraph-image.tsx` | 1200×630 iMessage preview |
 | `app/api/agent/[token]/…` | Bring-your-own-AI API |
@@ -44,7 +45,7 @@ Google sign-in turns on when `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` are set (re
 | `lib/files.ts` | File types, names, sizes, and how each type is served (pure, unit tested) |
 | `lib/actions.ts` | Server actions (all mutations) |
 | `lib/ops.ts` | Optimistic reducer used with `useOptimistic` |
-| `components/` | `TripProvider`, `NameSheet`, `DatesTab`, `WhereTab`, `CostsTab`, `ExpenseSheet`, `FilesTab`, `PitchView`, `SendYourAI`, toast |
+| `components/` | `TripProvider`, `NameSheet`, `DatesTab`, `WhereTab`, `CostsTab`, `ExpenseSheet`, `FilesTab`, `FileView`, `PitchView`, `SendYourAI`, toast |
 
 ## Notes
 
@@ -52,7 +53,7 @@ Google sign-in turns on when `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` are set (re
 - **Agent tokens** are never in the page payload; the pitch page fetches the viewer's own token through a server action when "Send your AI" opens. `POST /api/agent/{token}/rotate` or the "Leaked? Make a new link" button regenerates it.
 - **Agent API:** `GET /api/agent/{token}`, `PUT …/places/{id}/pitch` (POST also accepted), `POST …/places`, `POST …/places/{id}/comments`. CORS `*`, 20 KB bodies, 8,000-char pitches, 30 req/min per token (Upstash if configured, otherwise in-memory per instance).
 - **Costs:** amounts are integer cents. Each share stores integer `units` (1 for equal, nights stayed, or cents for exact) and owes `amount × units / Σunits`, with leftover cents assigned deterministically. A payment ("Mark paid") is an expense paid by the sender with the receiver as the only share. People who leave keep their expenses and still show in balances.
-- **Files:** stored in Postgres (`trip_files.data`, bytea), up to 4 MB each and 40 per trip, so there's no extra storage service. Uploads go through a server action (`serverActions.bodySizeLimit` is 4.5 MB in `next.config.ts`, matching Vercel's request limit). Anyone with the trip link can open them. HTML, SVG and anything that isn't a PDF or plain image is served with `Content-Security-Policy: sandbox`, so scripts in an uploaded page run in an opaque origin with no access to the app's cookies, storage or actions. Removing is a soft delete so it can be undone.
+- **Files:** stored in Postgres (`trip_files.data`, bytea), up to 4 MB each and 40 per trip, so there's no extra storage service. Uploads go through a server action (`serverActions.bodySizeLimit` is 4.5 MB in `next.config.ts`, matching Vercel's request limit). Anyone with the trip link can open them. HTML, SVG and anything that isn't a PDF or plain image is served with `Content-Security-Policy: sandbox`, so scripts in an uploaded page run in an opaque origin with no access to the app's cookies, storage or actions. Removing is a soft delete so it can be undone. The viewer uses pdf.js's legacy build (older mobile browsers lack the JS the modern build needs) and strips links that could run script from rendered Word docs. Other types (Excel, PowerPoint, HEIC) offer a download.
 - **Freshness:** mutations revalidate the trip; clients also `router.refresh()` on focus and every 20s while visible.
 
 ## Scripts

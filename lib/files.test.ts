@@ -36,3 +36,20 @@ test('serving: pages and SVGs are sandboxed, PDFs open inline, unknown types dow
   assert.deepEqual(servePolicy('application/zip'), { inline: false, sandbox: true });
   assert.equal(disposition('Plan é.pdf', true), `inline; filename="Plan _.pdf"; filename*=UTF-8''Plan%20%C3%A9.pdf`);
 });
+
+test('viewer picks a renderer per type', async () => {
+  const { viewerOf } = await import('./files.ts');
+  assert.equal(viewerOf({ name: 'a.pdf', type: 'application/pdf' }), 'pdf');
+  assert.equal(viewerOf({ name: 'a.html', type: 'text/html' }), 'page');
+  assert.equal(viewerOf({ name: 'a.docx', type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }), 'docx');
+  assert.equal(viewerOf({ name: 'a.heic', type: 'image/heic' }), 'none');
+  assert.equal(viewerOf({ name: 'a.zip', type: 'application/zip' }), 'none');
+});
+
+test('csv parsing handles quotes, commas, CRLF and a row cap', async () => {
+  const { parseCsv, safeHref } = await import('./files.ts');
+  assert.deepEqual(parseCsv('Day,Plan\r\n1,"Hike, then ""tacos"""\n2,Beach'), [['Day', 'Plan'], ['1', 'Hike, then "tacos"'], ['2', 'Beach']]);
+  assert.deepEqual(parseCsv('a\nb\nc\n', 2), [['a'], ['b']]);
+  assert.equal(safeHref('javascript:alert(1)'), false);
+  assert.equal(safeHref(' https://x.com'), true);
+});
