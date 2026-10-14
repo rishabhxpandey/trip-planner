@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Bricolage_Grotesque, Instrument_Sans } from 'next/font/google';
-import { Analytics } from '@vercel/analytics/next';
+import { SiteAnalytics } from '@/components/SiteAnalytics';
 import { ToastProvider } from '@/components/toast';
 import './globals.css';
 
@@ -45,7 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ToastProvider>
           <div className="relative mx-auto min-h-screen max-w-[480px]">{children}</div>
         </ToastProvider>
-        <Analytics />
+        <SiteAnalytics />
       </body>
     </html>
   );
