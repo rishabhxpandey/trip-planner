@@ -22,9 +22,9 @@ Google sign-in turns on when `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` are set (re
 
 ## Deploy (Vercel + Supabase)
 
-1. Database: the Supabase project `outward` (us-east-1) already has both migrations applied, including RLS on every table (run `npm run db:migrate` after merging anything that adds a file to `drizzle/`) so Supabase's public REST API can't read anything (the app connects as the owner, which bypasses RLS). For a new database, run `npm run db:migrate`.
-   `DATABASE_URL` is the **Transaction pooler** string from Supabase → Connect (port 6543).
-2. Vercel env vars: `DATABASE_URL`, `AUTH_SECRET`, optionally `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `NEXT_PUBLIC_SITE_URL`.
+1. Database: production deploys run pending migrations before building (`vercel.json` → `npm run vercel-build` → `scripts/migrate.mjs`). If a migration fails, the deploy stops and the live site keeps the previous version. Preview deploys skip it, since they share the database. `npm run db:migrate` does the same by hand, and both use one history table, so nothing applies twice. Every table has RLS on so Supabase's public REST API can't read anything (the app connects as the owner, which bypasses RLS).
+   `DATABASE_URL` is the **Transaction pooler** string from Supabase → Connect (port 6543) for the restricted `outward_app` role, which can't change the schema. Migrations use `MIGRATION_DATABASE_URL` instead: the **Session pooler** string (port 5432) for the `postgres` role, set for Production only.
+2. Vercel env vars: `DATABASE_URL`, `MIGRATION_DATABASE_URL` (Production only), `AUTH_SECRET`, optionally `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `NEXT_PUBLIC_SITE_URL`.
 3. Config knobs: `NEXT_PUBLIC_WEEK_STARTS_MONDAY`, `NEXT_PUBLIC_MIN_RANGE_DAYS`, `NEXT_PUBLIC_PUBLIC_VETOES`.
 
 ## Layout
@@ -60,4 +60,4 @@ Google sign-in turns on when `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` are set (re
 
 ## Scripts
 
-`npm run dev` · `npm run build` · `npm test` (derive logic) · `npm run lint` (typecheck) · `npm run db:generate` · `npm run db:migrate`
+`npm run dev` · `npm run build` · `npm run vercel-build` (migrate, then build) · `npm test` (derive logic) · `npm run lint` (typecheck) · `npm run db:generate` · `npm run db:migrate`
