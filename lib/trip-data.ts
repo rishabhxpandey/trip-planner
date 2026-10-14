@@ -1,7 +1,8 @@
-import { and, asc, between, eq, inArray, isNull } from 'drizzle-orm';
+import { and, asc, between, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { cache } from 'react';
 import { db } from '@/lib/db';
-import { approvals, availability, comments, destinations, expenseShares, expenses, participants, reactions, trips } from '@/lib/db/schema';
+import { approvals, availability, comments, destinations, expenseShares, expenses, participants, reactions, tripFiles, trips } from '@/lib/db/schema';
+import type { TripFile } from '@/lib/files';
 import type { Expense, FormerPerson, SplitMode } from '@/lib/costs';
 import type { Comment, Dest, Person, TripData } from '@/lib/trip-derive';
 
@@ -17,7 +18,7 @@ export const loadTrip = cache(async (slug: string): Promise<LoadedTrip | null> =
   const [trip] = await db.select().from(trips).where(eq(trips.id, slug)).limit(1);
   if (!trip) return null;
 
-  const [all, avail, dests, appr, rx, cmts, exps, shares] = await Promise.all([
+  const [all, avail, dests, appr, rx, cmts, exps, shares, fileRows] = await Promise.all([
     db.select().from(participants).where(eq(participants.tripId, slug)).orderBy(asc(participants.createdAt)),
     db
       .select({ pid: availability.participantId, day: availability.day })
@@ -52,6 +53,19 @@ export const loadTrip = cache(async (slug: string): Promise<LoadedTrip | null> =
       .innerJoin(participants, eq(participants.id, expenseShares.participantId))
       .where(eq(expenses.tripId, slug))
       .orderBy(asc(participants.createdAt)),
+    // Everything but the bytes.
+    db
+      .select({
+        id: tripFiles.id,
+        name: tripFiles.name,
+        type: tripFiles.contentType,
+        size: tripFiles.size,
+        by: tripFiles.uploadedBy,
+        createdAt: tripFiles.createdAt,
+      })
+      .from(tripFiles)
+      .where(and(eq(tripFiles.tripId, slug), isNull(tripFiles.deletedAt)))
+      .orderBy(desc(tripFiles.createdAt)),
   ]);
   const ppl = all.filter((p) => !p.leftAt);
 
@@ -135,6 +149,7 @@ export const loadTrip = cache(async (slug: string): Promise<LoadedTrip | null> =
         : null,
     expenses: expenseList,
     former,
+    files: fileRows.map((f): TripFile => ({ ...f, createdAt: iso(f.createdAt)! })),
     owners: Object.fromEntries(ppl.map((p) => [p.id, p.userId])),
   };
 });

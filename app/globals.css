@@ -79,3 +79,10 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
+
+/* Word documents rendered by docx-preview in the file viewer. */
+.docx-view a[href] {
+  color: var(--color-teal);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

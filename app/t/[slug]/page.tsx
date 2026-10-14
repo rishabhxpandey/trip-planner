@@ -21,5 +21,5 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function TripPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const { tab } = await searchParams;
-  return <TripHub initialTab={tab === 'where' || tab === 'costs' ? tab : 'dates'} />;
+  return <TripHub initialTab={tab === 'where' || tab === 'costs' || tab === 'files' ? tab : 'dates'} />;
 }

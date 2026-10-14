@@ -7,7 +7,9 @@ import { redirect } from 'next/navigation';
 import { currentUser, googleEnabled, signIn, signOut } from '@/auth';
 import { db } from '@/lib/db';
 import { expenseError, type Expense } from '@/lib/costs';
-import { approvals, availability, comments, destinations, expenseShares, expenses, participants, reactions, trips } from '@/lib/db/schema';
+import { approvals, availability, comments, destinations, expenseShares, expenses, participants, reactions, tripFiles, trips } from '@/lib/db/schema';
+import { checkFile } from '@/lib/file-check';
+import { MAX_FILES_PER_TRIP, MAX_FILE_BYTES, cleanName, fileSize } from '@/lib/files';
 import { tripSummaries as loadSummaries, type TripSummary } from '@/lib/trip-data';
 import { EMOJI, HUES, dayList, validateWindow } from '@/lib/trip-derive';
 import { newAgentToken } from '@/lib/tokens';
@@ -628,6 +630,55 @@ export async function deleteExpense(participantId: string, expenseId: string): P
     const p = await actor(participantId);
     if (!UUID_RE.test(expenseId ?? '')) return fail('That expense is gone.');
     await db.delete(expenses).where(and(eq(expenses.id, expenseId), eq(expenses.tripId, p.tripId)));
+    refresh(p.tripId);
+    return { ok: true };
+  });
+}
+
+/* ---------- Files ---------- */
+
+/** Attach a file to the trip. FormData: participantId, file. */
+export async function uploadFile(form: FormData): Promise<Result<{ id: string }>> {
+  return guard(async () => {
+    const p = await actor(String(form.get('participantId') ?? ''));
+    const file = form.get('file');
+    if (!(file instanceof File) || !file.size) return fail('Pick a file to upload.');
+    if (file.size > MAX_FILE_BYTES) return fail(`That file is over ${fileSize(MAX_FILE_BYTES)}. Try a smaller one or share a link.`);
+    const [{ n }] = await db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(tripFiles)
+      .where(and(eq(tripFiles.tripId, p.tripId), isNull(tripFiles.deletedAt)));
+    if (n >= MAX_FILES_PER_TRIP) return fail(`This trip already has ${MAX_FILES_PER_TRIP} files. Remove one first.`);
+    const name = cleanName(file.name);
+    const data = Buffer.from(await file.arrayBuffer());
+    // Only allowed types, bytes that match the extension, and no scripts, macros or embedded programs.
+    const check = await checkFile(name, data);
+    if (!check.ok) return fail(check.error);
+    const [row] = await db
+      .insert(tripFiles)
+      .values({
+        tripId: p.tripId,
+        name,
+        contentType: check.type,
+        size: data.byteLength,
+        data,
+        uploadedBy: p.id,
+      })
+      .returning({ id: tripFiles.id });
+    refresh(p.tripId);
+    return { ok: true, id: row.id };
+  });
+}
+
+/** Remove a file (soft delete, so the toast can undo it). */
+export async function removeFile(participantId: string, fileId: string, restore = false): Promise<Result> {
+  return guard(async () => {
+    const p = await actor(participantId);
+    if (!UUID_RE.test(fileId ?? '')) return fail('That file is gone.');
+    await db
+      .update(tripFiles)
+      .set({ deletedAt: restore ? null : new Date() })
+      .where(and(eq(tripFiles.id, fileId), eq(tripFiles.tripId, p.tripId)));
     refresh(p.tripId);
     return { ok: true };
   });

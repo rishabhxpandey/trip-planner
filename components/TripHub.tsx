@@ -9,15 +9,16 @@ import { ActivityStrip } from './ActivityStrip';
 import { CostsTab } from './CostsTab';
 import { DatesTab } from './DatesTab';
 import { EditTripSheet } from './EditTripSheet';
+import { FilesTab } from './FilesTab';
 import { PlanCard } from './Plan';
 import { useToast } from './toast';
 import { useTrip } from './TripProvider';
 import { LockIcon, LogoMark } from './ui';
 import { WhereTab } from './WhereTab';
 
-export type Tab = 'dates' | 'where' | 'costs';
+export type Tab = 'dates' | 'where' | 'costs' | 'files';
 
-const TAB_LABEL: Record<Tab, string> = { dates: 'Dates', where: 'Where', costs: 'Costs' };
+const TAB_LABEL: Record<Tab, string> = { dates: 'Dates', where: 'Where', costs: 'Costs', files: 'Files' };
 
 export function TripHub({ initialTab }: { initialTab: Tab }) {
   const { trip, me, meId, openSheet, setSel, needMe } = useTrip();
@@ -111,8 +112,8 @@ export function TripHub({ initialTab }: { initialTab: Tab }) {
       </div>
 
       <div className="sticky top-0 z-[5] bg-page px-5 pt-3.5 pb-3">
-        <div className="grid grid-cols-3 gap-1 rounded-[14px] bg-track p-1" role="tablist">
-          {(['dates', 'where', 'costs'] as const).map((t) => (
+        <div className="grid grid-cols-4 gap-1 rounded-[14px] bg-track p-1" role="tablist">
+          {(['dates', 'where', 'costs', 'files'] as const).map((t) => (
             <button
               key={t}
               role="tab"
@@ -126,7 +127,7 @@ export function TripHub({ initialTab }: { initialTab: Tab }) {
         </div>
       </div>
 
-      {tab === 'dates' ? <DatesTab /> : tab === 'where' ? <WhereTab /> : <CostsTab />}
+      {tab === 'dates' ? <DatesTab /> : tab === 'where' ? <WhereTab /> : tab === 'costs' ? <CostsTab /> : <FilesTab />}
       {editing && <EditTripSheet onClose={() => setEditing(false)} />}
     </div>
   );
