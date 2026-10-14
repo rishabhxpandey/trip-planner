@@ -4,7 +4,7 @@ import { Download, File as FileIcon, FileCode, FileImage, FileSpreadsheet, FileT
 import Link from 'next/link';
 import { useRef, useState } from 'react';
 import { removeFile, uploadFile } from '@/lib/actions';
-import { MAX_FILE_BYTES, fileSize, kindOf, type TripFile } from '@/lib/files';
+import { ACCEPT, ALLOWED_LABEL, MAX_FILE_BYTES, allowedType, extOf, fileSize, kindOf, type TripFile } from '@/lib/files';
 import { monthDay } from '@/lib/trip-derive';
 import { useToast } from './toast';
 import { useTrip } from './TripProvider';
@@ -45,6 +45,10 @@ export function FilesTab() {
     if (input.current) input.current.value = '';
     let done = 0;
     for (const f of files) {
+      if (!allowedType(f.name)) {
+        toast(`${extOf(f.name) ? `.${extOf(f.name)} files` : `${f.name}`} can’t be uploaded. You can add ${ALLOWED_LABEL}.`);
+        continue;
+      }
       if (f.size > MAX_FILE_BYTES) {
         toast(`${f.name} is over ${fileSize(MAX_FILE_BYTES)}. Try a smaller one or share a link.`);
         continue;
@@ -74,8 +78,9 @@ export function FilesTab() {
           <>
             <span className="display text-[21px] leading-[1.15] font-bold tracking-[-0.015em]">Keep the plan in one place</span>
             <span className="text-sm leading-[1.4] text-muted">
-              Upload the itinerary, booking confirmations, tickets, or a plan page. PDFs, web pages, images, docs, any file
-              up to {fileSize(MAX_FILE_BYTES)}. Anyone with the trip link can open them.
+              Upload the itinerary, booking confirmations, tickets, or a plan page: {ALLOWED_LABEL}, up to{' '}
+              {fileSize(MAX_FILE_BYTES)} each. Every file is checked, and anything that could run code is refused.
+              Anyone with the trip link can open them.
             </span>
           </>
         )}
@@ -87,14 +92,16 @@ export function FilesTab() {
           <Upload size={18} strokeWidth={2.4} aria-hidden />
           {busy ? 'Uploading…' : 'Upload a file'}
         </button>
-        <input ref={input} type="file" multiple hidden onChange={(e) => upload(e.target.files)} />
+        <input ref={input} type="file" accept={ACCEPT} multiple hidden onChange={(e) => upload(e.target.files)} />
         {busy && (
           <span role="status" className="truncate text-[13px] text-muted">
             {busy}
           </span>
         )}
         {!!trip.files.length && !busy && (
-          <span className="text-[13px] text-muted">Any file up to {fileSize(MAX_FILE_BYTES)}. Anyone with the trip link can open them.</span>
+          <span className="text-[13px] text-muted">
+            {ALLOWED_LABEL}, up to {fileSize(MAX_FILE_BYTES)} each. Files that could run code are refused.
+          </span>
         )}
       </div>
 

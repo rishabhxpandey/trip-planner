@@ -13,39 +13,39 @@ export type TripFile = {
 export const MAX_FILE_BYTES = 4 * 1024 * 1024;
 export const MAX_FILES_PER_TRIP = 40;
 
-const BY_EXT: Record<string, string> = {
+/**
+ * The only file types a trip accepts, by extension. Everything else (programs, scripts, installers, archives,
+ * macro-enabled and old binary Office formats, SVG) is refused. The server also checks each file's bytes
+ * match its extension and have no active content (lib/file-check.ts), so renaming a program doesn't get it in.
+ */
+export const ALLOWED: Record<string, string> = {
   pdf: 'application/pdf',
-  html: 'text/html',
-  htm: 'text/html',
-  txt: 'text/plain',
-  md: 'text/markdown',
-  csv: 'text/csv',
-  json: 'application/json',
   png: 'image/png',
   jpg: 'image/jpeg',
   jpeg: 'image/jpeg',
   gif: 'image/gif',
   webp: 'image/webp',
   heic: 'image/heic',
-  svg: 'image/svg+xml',
-  doc: 'application/msword',
-  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  xls: 'application/vnd.ms-excel',
-  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  ppt: 'application/vnd.ms-powerpoint',
-  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  heif: 'image/heif',
+  txt: 'text/plain',
+  md: 'text/markdown',
+  csv: 'text/csv',
+  html: 'text/html',
+  htm: 'text/html',
   ics: 'text/calendar',
-  zip: 'application/zip',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
 };
+
+/** For the file picker and the "what can I upload" line. */
+export const ACCEPT = Object.keys(ALLOWED).map((e) => `.${e}`).join(',');
+export const ALLOWED_LABEL = 'PDFs, photos, Word, Excel, PowerPoint, web pages, text, CSV and calendar files';
 
 export const extOf = (name: string) => (/\.([a-z0-9]{1,8})$/i.exec(name)?.[1] ?? '').toLowerCase();
 
-/** The browser's type when it gave one, else a guess from the extension. */
-export function typeOf(name: string, given?: string | null): string {
-  const t = String(given ?? '').trim().toLowerCase();
-  if (/^[a-z]+\/[a-z0-9.+-]+$/.test(t) && t !== 'application/octet-stream') return t;
-  return BY_EXT[extOf(name)] ?? 'application/octet-stream';
-}
+/** The type for an allowed file name, or null when that kind of file isn't accepted. Never trusts the browser's type. */
+export const allowedType = (name: string): string | null => ALLOWED[extOf(name)] ?? null;
 
 /** Keep the name readable but safe for headers and storage: no paths, no control characters, max 120 chars. */
 export function cleanName(raw: string): string {
@@ -99,7 +99,7 @@ export type Viewer = 'pdf' | 'image' | 'page' | 'csv' | 'docx' | 'none';
 /** How the in-app viewer shows a file. 'page' is a sandboxed frame (HTML, plain text); 'none' offers a download. */
 export function viewerOf(f: Pick<TripFile, 'name' | 'type'>): Viewer {
   if (f.type === 'application/pdf') return 'pdf';
-  if (/^image\/(png|jpeg|gif|webp|svg\+xml)$/.test(f.type)) return 'image';
+  if (/^image\/(png|jpeg|gif|webp)$/.test(f.type)) return 'image';
   if (f.type === 'text/csv') return 'csv';
   if (f.type === 'text/html' || f.type === 'text/plain' || f.type === 'text/markdown') return 'page';
   if (f.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') return 'docx';

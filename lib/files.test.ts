@@ -1,13 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { cleanName, disposition, fileSize, kindOf, servePolicy, typeOf } from './files.ts';
+import { allowedType, cleanName, disposition, fileSize, kindOf, servePolicy } from './files.ts';
 
-test('type: trust a real browser type, else guess from the extension', () => {
-  assert.equal(typeOf('plan.pdf', 'application/pdf'), 'application/pdf');
-  assert.equal(typeOf('plan.html', ''), 'text/html');
-  assert.equal(typeOf('Trip.DOCX', 'application/octet-stream'), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-  assert.equal(typeOf('weird.xyz', ''), 'application/octet-stream');
-  assert.equal(typeOf('x.pdf', 'not a type'), 'application/pdf');
+test('only allowed extensions get a type, whatever the browser claims', () => {
+  assert.equal(allowedType('plan.pdf'), 'application/pdf');
+  assert.equal(allowedType('Trip.DOCX'), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+  for (const bad of ['setup.exe', 'run.bat', 'x.js', 'a.zip', 'b.svg', 'm.docm', 'old.doc', 'noext']) assert.equal(allowedType(bad), null, bad);
 });
 
 test('names: strip paths and control characters, keep the extension when trimming', () => {

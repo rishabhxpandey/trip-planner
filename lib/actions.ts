@@ -8,7 +8,8 @@ import { currentUser, googleEnabled, signIn, signOut } from '@/auth';
 import { db } from '@/lib/db';
 import { expenseError, type Expense } from '@/lib/costs';
 import { approvals, availability, comments, destinations, expenseShares, expenses, participants, reactions, tripFiles, trips } from '@/lib/db/schema';
-import { MAX_FILES_PER_TRIP, MAX_FILE_BYTES, cleanName, fileSize, typeOf } from '@/lib/files';
+import { checkFile } from '@/lib/file-check';
+import { MAX_FILES_PER_TRIP, MAX_FILE_BYTES, cleanName, fileSize } from '@/lib/files';
 import { tripSummaries as loadSummaries, type TripSummary } from '@/lib/trip-data';
 import { EMOJI, HUES, dayList, validateWindow } from '@/lib/trip-derive';
 import { newAgentToken } from '@/lib/tokens';
@@ -649,14 +650,18 @@ export async function uploadFile(form: FormData): Promise<Result<{ id: string }>
       .where(and(eq(tripFiles.tripId, p.tripId), isNull(tripFiles.deletedAt)));
     if (n >= MAX_FILES_PER_TRIP) return fail(`This trip already has ${MAX_FILES_PER_TRIP} files. Remove one first.`);
     const name = cleanName(file.name);
+    const data = Buffer.from(await file.arrayBuffer());
+    // Only allowed types, bytes that match the extension, and no scripts, macros or embedded programs.
+    const check = await checkFile(name, data);
+    if (!check.ok) return fail(check.error);
     const [row] = await db
       .insert(tripFiles)
       .values({
         tripId: p.tripId,
         name,
-        contentType: typeOf(name, file.type),
-        size: file.size,
-        data: Buffer.from(await file.arrayBuffer()),
+        contentType: check.type,
+        size: data.byteLength,
+        data,
         uploadedBy: p.id,
       })
       .returning({ id: tripFiles.id });
