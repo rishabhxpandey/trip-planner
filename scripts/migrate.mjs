@@ -1,5 +1,5 @@
-// Applies pending drizzle/*.sql migrations (`npm run db:migrate:deploy`). Meant to run before `next build` on Vercel production deploys,
-// but nothing wires it into the build yet. Preview deploys share the database, so they skip it.
+// Applies pending drizzle/*.sql migrations. Runs before `next build` on Vercel production deploys
+// (vercel.json → `npm run vercel-build`). Preview deploys share the database, so they skip it.
 // Uses the same history table as `npm run db:migrate` (drizzle.__drizzle_migrations), so the two never double-apply.
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
@@ -10,9 +10,11 @@ if (onVercel && process.env.VERCEL_ENV !== 'production') {
   console.log(`[migrate] Skipping on ${process.env.VERCEL_ENV} deploy.`);
   process.exit(0);
 }
-const url = process.env.DATABASE_URL;
+// Migrations need the owner role. The app's own DATABASE_URL is a restricted role (outward_app) that can't
+// create tables, so this uses a separate URL that only builds see. Locally, DATABASE_URL works as a fallback.
+const url = process.env.MIGRATION_DATABASE_URL || (onVercel ? '' : process.env.DATABASE_URL);
 if (!url) {
-  console.error('[migrate] DATABASE_URL is not set.');
+  console.error('[migrate] MIGRATION_DATABASE_URL is not set. Add it in Vercel (Production only): the Supabase connection string for the postgres role.');
   process.exit(1);
 }
 
